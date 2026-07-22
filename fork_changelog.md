@@ -33,6 +33,35 @@ self-referential and would change that hash.
 
 ---
 
+## 2026-07-22 — Opt-in preview deployments
+
+- **Status:** Active fork decision
+- **Implementation commit:**
+  `dbe97b47038b6794d0b878c35f2ec2b51f01a51b`
+- **Parent commit:** `df46f903eab67c6831f3d2d9e6e4d460e110fa14`
+- **Commit subject:** `ci: gate unconfigured preview deployments`
+- **Scope:** GitHub Actions preview deployment workflow
+
+### Why this fork differs
+
+This fork does not have Neon or Vercel preview credentials configured. Preview
+deployment jobs should not fail every pull request merely because that optional
+infrastructure is unavailable.
+
+### Active fork decisions
+
+- Run preview deployment jobs only when the repository variable
+  `PREVIEW_DEPLOYMENTS_ENABLED` is set to `true`.
+- Keep regular pull-request CI independent from optional preview infrastructure.
+
+### Verification recorded for the implementation commit
+
+- Root lint passed with zero warnings.
+- The workflow change passed `git diff --check`.
+- GitHub-hosted PR checks verified that unconfigured preview jobs skip cleanly.
+
+---
+
 ## 2026-07-22 — Manually runnable CI
 
 - **Status:** Active fork decision
