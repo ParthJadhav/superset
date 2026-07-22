@@ -1,0 +1,1 @@
+export { DashboardSidebarPinnedChats } from "./DashboardSidebarPinnedChats";

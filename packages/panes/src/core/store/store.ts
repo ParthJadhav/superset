@@ -153,6 +153,12 @@ export interface WorkspaceStore<TData> extends WorkspaceState<TData> {
 		position?: SplitPosition;
 		relativeToPaneId?: string;
 	}) => void;
+	addPaneToEdge: (args: {
+		tabId: string;
+		pane: CreatePaneInput<TData>;
+		position: SplitPosition;
+		sizePercentage?: number;
+	}) => void;
 	resizeSplit: (args: {
 		tabId: string;
 		path: SplitPath;
@@ -592,6 +598,49 @@ export function createWorkspaceStore<TData>(
 									activePaneId: newPane.id,
 								}
 							: t,
+					),
+				};
+			});
+		},
+
+		addPaneToEdge: (args) => {
+			set((s) => {
+				const tab = s.tabs.find((candidate) => candidate.id === args.tabId);
+				if (!tab) return s;
+
+				const newPane = buildPane(args.pane);
+				const newPaneLeaf: LayoutNode = {
+					type: "pane",
+					paneId: newPane.id,
+				};
+				const isFirst = args.position === "left" || args.position === "top";
+				const requestedSize = Math.min(
+					90,
+					Math.max(10, args.sizePercentage ?? 50),
+				);
+				const layout: LayoutNode = tab.layout
+					? {
+							type: "split",
+							direction: positionToDirection(args.position),
+							first: isFirst ? newPaneLeaf : tab.layout,
+							second: isFirst ? tab.layout : newPaneLeaf,
+							splitPercentage: isFirst ? requestedSize : 100 - requestedSize,
+						}
+					: newPaneLeaf;
+
+				return {
+					tabs: s.tabs.map((candidate) =>
+						candidate.id === args.tabId
+							? {
+									...tab,
+									layout,
+									panes: {
+										...tab.panes,
+										[newPane.id]: newPane,
+									},
+									activePaneId: newPane.id,
+								}
+							: candidate,
 					),
 				};
 			});

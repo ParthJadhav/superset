@@ -5,16 +5,9 @@ import {
 	ContextMenuSeparator,
 	ContextMenuTrigger,
 } from "@superset/ui/context-menu";
-import {
-	LuFolderOpen,
-	LuFolderPlus,
-	LuPencil,
-	LuSettings,
-	LuX,
-} from "react-icons/lu";
+import { LuFolderOpen, LuPencil, LuSettings, LuX } from "react-icons/lu";
 
 interface DashboardSidebarProjectContextMenuProps {
-	onCreateSection: () => void;
 	onOpenInFinder: () => void;
 	onOpenSettings: () => void;
 	onRemoveFromSidebar: () => void;
@@ -23,7 +16,6 @@ interface DashboardSidebarProjectContextMenuProps {
 }
 
 export function DashboardSidebarProjectContextMenu({
-	onCreateSection,
 	onOpenInFinder,
 	onOpenSettings,
 	onRemoveFromSidebar,
@@ -46,10 +38,6 @@ export function DashboardSidebarProjectContextMenu({
 				<ContextMenuItem onSelect={onOpenSettings}>
 					<LuSettings className="size-4 mr-2" />
 					Project Settings
-				</ContextMenuItem>
-				<ContextMenuItem onSelect={onCreateSection}>
-					<LuFolderPlus className="size-4 mr-2" />
-					New group
 				</ContextMenuItem>
 				<ContextMenuSeparator />
 				<ContextMenuItem

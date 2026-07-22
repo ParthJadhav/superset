@@ -9,7 +9,7 @@ import { toast } from "@superset/ui/sonner";
 import { cn } from "@superset/ui/utils";
 import { workspaceTrpc } from "@superset/workspace-client";
 import { Circle, GitCompareArrows, Globe, MessageSquare } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import {
 	LuArrowDownToLine,
 	LuClipboard,
@@ -17,7 +17,9 @@ import {
 	LuEraser,
 	LuPower,
 } from "react-icons/lu";
+import { useTerminalAgentBindings } from "renderer/hooks/host-service/useTerminalAgentBindings";
 import { useHotkeyDisplay } from "renderer/hotkeys";
+import { resolveAgentChatTitle } from "renderer/lib/agent-chat-title";
 import { FileIcon } from "renderer/lib/fileIcons";
 import { getBaseName } from "renderer/lib/pathBasename";
 import {
@@ -29,6 +31,7 @@ import { terminalRuntimeRegistry } from "renderer/lib/terminal/terminal-runtime-
 import { useWorkspace } from "renderer/routes/_authenticated/_dashboard/v2-workspace/providers/WorkspaceProvider";
 import { useCollections } from "renderer/routes/_authenticated/providers/CollectionsProvider";
 import { getV2NotificationSourcesForPane } from "renderer/stores/v2-notifications";
+import { getV2WorkspaceDisplayName } from "renderer/utils/getV2WorkspaceDisplayName";
 import type { StoreApi } from "zustand/vanilla";
 import { V2NotificationStatusIndicator } from "../../components/V2NotificationStatusIndicator";
 import {
@@ -44,6 +47,7 @@ import type {
 	PaneViewerData,
 	TerminalPaneData,
 } from "../../types";
+import type { CreateAgentTerminal } from "../useCreateAgentTerminal";
 import type { TerminalLauncher } from "../useV2TerminalLauncher";
 import { BrowserPane, BrowserPaneToolbar } from "./components/BrowserPane";
 import { ChatPane } from "./components/ChatPane";
@@ -108,6 +112,7 @@ interface UsePaneRegistryOptions {
 	onRevealPath: (path: string) => void;
 	launcher: TerminalLauncher;
 	store: StoreApi<WorkspaceStore<PaneViewerData>>;
+	createAgentTerminal: CreateAgentTerminal;
 }
 
 export function usePaneRegistry({
@@ -115,10 +120,12 @@ export function usePaneRegistry({
 	onRevealPath,
 	launcher,
 	store,
+	createAgentTerminal,
 }: UsePaneRegistryOptions): PaneRegistry<PaneViewerData> {
 	const { workspace } = useWorkspace();
 	const workspaceId = workspace.id;
-	const runAgent = workspaceTrpc.agents.run.useMutation();
+	const workspaceName = getV2WorkspaceDisplayName(workspace);
+	const terminalAgentBindings = useTerminalAgentBindings(workspaceId);
 	const collections = useCollections();
 	const clearShortcut = useHotkeyDisplay("CLEAR_TERMINAL").text;
 	const scrollToBottomShortcut = useHotkeyDisplay("SCROLL_TO_BOTTOM").text;
@@ -164,47 +171,29 @@ export function usePaneRegistry({
 		[collections.v2WorkspaceLocalState, workspaceId],
 	);
 
-	const createNewAgentSession = useCallback(
-		async (input: {
-			configId: string;
-			placement: "split-pane" | "new-tab";
-			prompt: string;
-		}): Promise<{ terminalId: string } | null> => {
-			try {
-				// Host pipeline bakes the prompt into the initialCommand using the
-				// agent's argv/stdin transport — no follow-up writeInput needed,
-				// no bind-wait race vs. the launching shell.
-				const result = await runAgent.mutateAsync({
-					workspaceId,
-					agent: input.configId,
-					prompt: input.prompt,
+	useEffect(() => {
+		const state = store.getState();
+		for (const tab of state.tabs) {
+			for (const pane of Object.values(tab.panes)) {
+				if (pane.kind !== "terminal") continue;
+				const { terminalId } = pane.data as TerminalPaneData;
+				const binding = terminalAgentBindings.get(terminalId);
+				if (!binding) continue;
+				const threadTitle = resolveAgentChatTitle({
+					explicitTitle: pane.titleOverride,
+					sessionTitle: binding.sessionTitle,
+					workspaceName,
+					agentId: binding.agentId,
 				});
-				if (result.kind !== "terminal") {
-					toast.error("Selected agent isn't a terminal agent");
-					return null;
-				}
-				const terminalId = result.sessionId;
-				const state = store.getState();
-				const pane = {
-					kind: "terminal" as const,
-					titleOverride: result.label,
-					data: { terminalId } as TerminalPaneData,
-				};
-				if (input.placement === "split-pane" && state.activeTabId) {
-					state.addPane({ tabId: state.activeTabId, pane });
-				} else {
-					state.addTab({ panes: [pane] });
-				}
-				return { terminalId };
-			} catch (error) {
-				const description =
-					error instanceof Error ? error.message : "Unknown error";
-				toast.error("Couldn't start agent session", { description });
-				return null;
+				if (threadTitle === pane.titleOverride) continue;
+				state.setPaneTitleOverride({
+					tabId: tab.id,
+					paneId: pane.id,
+					titleOverride: threadTitle,
+				});
 			}
-		},
-		[runAgent, store, workspaceId],
-	);
+		}
+	}, [store, terminalAgentBindings, workspaceName]);
 
 	return useMemo<PaneRegistry<PaneViewerData>>(
 		() => ({
@@ -290,7 +279,7 @@ export function usePaneRegistry({
 						context={ctx}
 						workspaceId={workspaceId}
 						onOpenFile={onOpenFile}
-						onCreateNewAgentSession={createNewAgentSession}
+						onCreateNewAgentSession={createAgentTerminal}
 					/>
 				),
 				renderHeaderExtras: () => <DiffPaneHeaderExtras />,
@@ -300,6 +289,7 @@ export function usePaneRegistry({
 					),
 			},
 			terminal: {
+				hideHeaderWhenSolo: true,
 				getIcon: (ctx) => {
 					const { terminalId } = ctx.pane.data as TerminalPaneData;
 					return (
@@ -583,7 +573,7 @@ export function usePaneRegistry({
 			launcher,
 			onOpenFile,
 			onRevealPath,
-			createNewAgentSession,
+			createAgentTerminal,
 			workspaceTrpcUtils,
 		],
 	);

@@ -1,8 +1,14 @@
+import type { WorkspaceState } from "@superset/panes";
 import { useLiveQuery } from "@tanstack/react-db";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useRef } from "react";
 import { useHostProjects } from "renderer/hooks/host-projects/useHostProjects";
+import { deriveTerminalAgentStatus } from "renderer/hooks/host-service/useTerminalAgentStatuses/deriveTerminalAgentStatus";
 import { useRelayUrl } from "renderer/hooks/useRelayUrl";
+import {
+	findPersistedTerminalTitle,
+	resolveAgentChatTitle,
+} from "renderer/lib/agent-chat-title";
 import { getHostServiceClientByUrl } from "renderer/lib/host-service-client";
 import { useDashboardSidebarState } from "renderer/routes/_authenticated/hooks/useDashboardSidebarState";
 import { useCollections } from "renderer/routes/_authenticated/providers/CollectionsProvider";
@@ -12,6 +18,7 @@ import {
 } from "renderer/routes/_authenticated/providers/CollectionsProvider/dashboardSidebarLocal";
 import { useHostWorkspaces } from "renderer/routes/_authenticated/providers/HostWorkspacesProvider";
 import { useLocalHostService } from "renderer/routes/_authenticated/providers/LocalHostServiceProvider";
+import { useV2NotificationStore } from "renderer/stores/v2-notifications";
 import { useWorkspaceTransactionsStore } from "renderer/stores/workspace-creates";
 import type {
 	DashboardSidebarProject,
@@ -135,6 +142,9 @@ export function useDashboardSidebarData() {
 	const workspaceTransactionsById = useWorkspaceTransactionsStore(
 		(state) => state.byWorkspaceId,
 	);
+	const terminalSeenAt = useV2NotificationStore(
+		(state) => state.terminalSeenAt,
+	);
 
 	const { data: hosts = [] } = useLiveQuery(
 		(q) =>
@@ -230,8 +240,19 @@ export function useDashboardSidebarData() {
 					tabOrder: sidebarWorkspaces.sidebarState.tabOrder,
 					sectionId: sidebarWorkspaces.sidebarState.sectionId,
 					isHidden: sidebarWorkspaces.sidebarState.isHidden,
+					paneLayout: sidebarWorkspaces.paneLayout,
 				})),
 		[collections],
+	);
+	const paneLayoutsByWorkspaceId = useMemo(
+		() =>
+			new Map(
+				sidebarLocalStateRows.map((row) => [
+					row.workspaceId,
+					row.paneLayout as WorkspaceState<unknown>,
+				]),
+			),
+		[sidebarLocalStateRows],
 	);
 	const rawSidebarWorkspaces = useMemo(
 		() =>
@@ -252,6 +273,7 @@ export function useDashboardSidebarData() {
 						tabOrder: localState.tabOrder,
 						sectionId: localState.sectionId,
 						isHidden: localState.isHidden,
+						paneLayout: localState.paneLayout,
 					},
 				];
 			}),
@@ -293,8 +315,9 @@ export function useDashboardSidebarData() {
 					updatedAt: workspace.updatedAt,
 					tabOrder: MAIN_WORKSPACE_TAB_ORDER,
 					sectionId: null as string | null,
+					paneLayout: paneLayoutsByWorkspaceId.get(workspace.id),
 				})),
-		[hostWorkspaces],
+		[hostWorkspaces, paneLayoutsByWorkspaceId],
 	);
 	const localMainWorkspaces = useMemo(
 		() =>
@@ -338,6 +361,37 @@ export function useDashboardSidebarData() {
 			}),
 		[activeHostUrl, hosts, machineId, relayUrl, visibleSidebarWorkspaces],
 	);
+	const hostUrlByMachineId = useMemo(
+		() =>
+			new Map(
+				pullRequestQueryTargets.map((target) => [
+					target.machineId,
+					target.hostUrl,
+				]),
+			),
+		[pullRequestQueryTargets],
+	);
+
+	const terminalAgentQueries = useQueries({
+		queries: visibleSidebarWorkspaces.map((workspace) => {
+			const hostUrl = hostUrlByMachineId.get(workspace.hostId) ?? null;
+			return {
+				queryKey: ["terminal-agent-bindings", hostUrl, workspace.id] as const,
+				enabled: hostUrl !== null,
+				queryFn: () =>
+					hostUrl
+						? getHostServiceClientByUrl(
+								hostUrl,
+							).terminalAgents.listByWorkspace.query({
+								workspaceId: workspace.id,
+							})
+						: Promise.resolve([]),
+				refetchInterval: 5_000,
+				refetchOnWindowFocus: true,
+				staleTime: 5_000,
+			};
+		}),
+	});
 
 	const pullRequestQueries = useQueries({
 		queries: pullRequestQueryTargets.map((target) => ({
@@ -392,23 +446,73 @@ export function useDashboardSidebarData() {
 	const pullRequestsByWorkspaceId =
 		useStablePullRequestsByWorkspaceId(pullRequestRows);
 
-	const computedGroups = useMemo<DashboardSidebarProject[]>(
-		() =>
-			buildDashboardSidebarProjects({
-				sidebarProjects,
-				sidebarSections,
-				visibleSidebarWorkspaces,
-				machineId,
-				pullRequestsByWorkspaceId,
-			}),
-		[
-			machineId,
-			pullRequestsByWorkspaceId,
+	const computedGroups = useMemo<DashboardSidebarProject[]>(() => {
+		const projects = buildDashboardSidebarProjects({
 			sidebarProjects,
 			sidebarSections,
 			visibleSidebarWorkspaces,
-		],
-	);
+			machineId,
+			pullRequestsByWorkspaceId,
+		});
+		const bindingsByWorkspaceId = new Map(
+			visibleSidebarWorkspaces.map((workspace, index) => [
+				workspace.id,
+				terminalAgentQueries[index]?.data ?? [],
+			]),
+		);
+		const layoutsByWorkspaceId = new Map(
+			visibleSidebarWorkspaces.map((workspace) => [
+				workspace.id,
+				workspace.paneLayout as WorkspaceState<unknown> | undefined,
+			]),
+		);
+
+		for (const project of projects) {
+			const workspaces = project.children.flatMap((child) =>
+				child.type === "workspace"
+					? [child.workspace]
+					: child.section.workspaces,
+			);
+			project.agentChats = workspaces
+				.flatMap((workspace) =>
+					(bindingsByWorkspaceId.get(workspace.id) ?? []).map((binding) => ({
+						terminalId: binding.terminalId,
+						workspaceId: workspace.id,
+						workspaceName: workspace.name,
+						projectId: project.id,
+						projectName: project.name,
+						agentId: binding.agentId,
+						status: deriveTerminalAgentStatus({
+							lastEventType: binding.lastEventType,
+							lastEventAt: binding.lastEventAt,
+							lastSeenAt: terminalSeenAt[binding.terminalId],
+						}),
+						title: resolveAgentChatTitle({
+							explicitTitle: findPersistedTerminalTitle(
+								layoutsByWorkspaceId.get(workspace.id),
+								binding.terminalId,
+							),
+							sessionTitle: binding.sessionTitle,
+							workspaceName: workspace.name,
+							agentId: binding.agentId,
+						}),
+						startedAt: binding.startedAt,
+						lastEventAt: binding.lastEventAt,
+					})),
+				)
+				.sort((left, right) => right.lastEventAt - left.lastEventAt);
+		}
+
+		return projects;
+	}, [
+		machineId,
+		pullRequestsByWorkspaceId,
+		sidebarProjects,
+		sidebarSections,
+		terminalAgentQueries,
+		terminalSeenAt,
+		visibleSidebarWorkspaces,
+	]);
 	const groups = useStableDashboardSidebarProjects(computedGroups);
 
 	return {

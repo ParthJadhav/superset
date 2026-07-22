@@ -5,21 +5,16 @@ import { useWorkspaceSelectionStore } from "renderer/stores/workspace-selection"
 import { MultiDragPreview } from "./MultiDragPreview";
 import { PortsList } from "./PortsList";
 import { ProjectSection } from "./ProjectSection";
-import { SetupScriptCard } from "./SetupScriptCard";
 import { SidebarDropZone } from "./SidebarDropZone";
 import { WorkspaceSidebarFooter } from "./WorkspaceSidebarFooter";
 import { WorkspaceSidebarHeader } from "./WorkspaceSidebarHeader";
 
 interface WorkspaceSidebarProps {
 	isCollapsed?: boolean;
-	activeProjectId: string | null;
-	activeProjectName: string | null;
 }
 
 export function WorkspaceSidebar({
 	isCollapsed = false,
-	activeProjectId,
-	activeProjectName,
 }: WorkspaceSidebarProps) {
 	const { groups } = useWorkspaceShortcuts();
 	const clearSelection = useWorkspaceSelectionStore((s) => s.clearSelection);
@@ -109,12 +104,6 @@ export function WorkspaceSidebar({
 			</div>
 
 			{!isCollapsed && <PortsList />}
-
-			<SetupScriptCard
-				isCollapsed={isCollapsed}
-				projectId={activeProjectId}
-				projectName={activeProjectName}
-			/>
 
 			<HiringBanner surface="v1" isCollapsed={isCollapsed} />
 

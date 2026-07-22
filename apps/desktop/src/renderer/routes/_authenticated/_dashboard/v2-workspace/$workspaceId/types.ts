@@ -8,6 +8,7 @@ export interface FilePaneData {
 
 export interface TerminalPaneData {
 	terminalId: string;
+	placement?: "bottom-panel";
 }
 
 export interface ChatPaneData {

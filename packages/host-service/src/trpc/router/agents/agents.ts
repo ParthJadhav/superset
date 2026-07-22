@@ -311,7 +311,9 @@ export const agentsRouter = router({
 			z.object({
 				workspaceId: z.string().uuid(),
 				agent: z.string().min(1),
-				prompt: z.string().min(1),
+				// Empty launches intentionally start the selected agent in interactive
+				// mode. buildAgentCommandString omits prompt-only flags in that case.
+				prompt: z.string(),
 				attachmentIds: z.array(z.string().uuid()).optional(),
 				model: z.string().min(1).optional(),
 				effort: z.string().min(1).optional(),

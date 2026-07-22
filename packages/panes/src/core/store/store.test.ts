@@ -322,6 +322,37 @@ describe("split operations", () => {
 		expect(store.getState().tabs[0]?.activePaneId).toBe("p1");
 	});
 
+	it("adds a bottom pane across the full root layout", () => {
+		const store = makeStore();
+		store.getState().addTab({ id: "t1", panes: [tp("p1")] });
+		store.getState().splitPane({
+			tabId: "t1",
+			paneId: "p1",
+			position: "right",
+			newPane: tp("p2"),
+		});
+
+		store.getState().addPaneToEdge({
+			tabId: "t1",
+			position: "bottom",
+			sizePercentage: 30,
+			pane: tp("panel"),
+		});
+
+		const tab = store.getState().tabs[0];
+		expect(tab?.activePaneId).toBe("panel");
+		expect(tab?.layout.type).toBe("split");
+		if (tab?.layout.type === "split") {
+			expect(tab.layout.direction).toBe("vertical");
+			expect(tab.layout.splitPercentage).toBe(70);
+			expect(tab.layout.first.type).toBe("split");
+			expect(tab.layout.second).toEqual({
+				type: "pane",
+				paneId: "panel",
+			});
+		}
+	});
+
 	it("resizes a split via path", () => {
 		const store = makeStore();
 		store.getState().addTab({ id: "t1", panes: [tp("p1")] });

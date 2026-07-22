@@ -8,6 +8,7 @@ import { electronTrpc } from "renderer/lib/electron-trpc";
 import { useWorkspaceSidebarStore } from "renderer/stores/workspace-sidebar-state";
 import { NavigationControls } from "../NavigationControls";
 import { SidebarToggle } from "../SidebarToggle";
+import { AutomationsButton } from "./components/AutomationsButton";
 import { OpenInMenuButton } from "./components/OpenInMenuButton";
 import { OrganizationDropdown } from "./components/OrganizationDropdown";
 import { ResourceConsumption } from "./components/ResourceConsumption";
@@ -62,7 +63,14 @@ export function TopBar() {
 					<ZoomStable enabled={isMac} className="flex items-center gap-1.5">
 						<SidebarToggle />
 						<NavigationControls />
-						{!isV2CloudEnabled && <ResourceConsumption surface="v1" />}
+						{isV2CloudEnabled ? (
+							<div className="flex items-center gap-0.5">
+								<ResourceConsumption surface="v2" />
+								<AutomationsButton />
+							</div>
+						) : (
+							<ResourceConsumption surface="v1" />
+						)}
 					</ZoomStable>
 				)}
 			</div>

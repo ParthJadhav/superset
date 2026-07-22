@@ -1,4 +1,6 @@
+import type { BuiltinAgentId } from "@superset/shared/agent-catalog";
 import type { WorkspaceTransactionSnapshot } from "renderer/stores/workspace-creates";
+import type { PaneStatus } from "shared/tabs-types";
 
 export type DashboardSidebarWorkspaceHostType =
 	| "local-device"
@@ -46,6 +48,19 @@ export interface DashboardSidebarWorkspace {
 	pendingTransaction: WorkspaceTransactionSnapshot | null;
 }
 
+export interface DashboardSidebarAgentChat {
+	terminalId: string;
+	workspaceId: string;
+	workspaceName: string;
+	projectId: string;
+	projectName: string;
+	agentId: BuiltinAgentId;
+	status: PaneStatus;
+	title: string;
+	startedAt: number;
+	lastEventAt: number;
+}
+
 export interface DashboardSidebarSection {
 	id: string;
 	projectId: string;
@@ -77,4 +92,5 @@ export interface DashboardSidebarProject {
 	updatedAt: Date;
 	isCollapsed: boolean;
 	children: DashboardSidebarProjectChild[];
+	agentChats: DashboardSidebarAgentChat[];
 }

@@ -42,28 +42,24 @@ export function DashboardSidebarProjectSection({
 	const {
 		cancelRename,
 		confirmRemoveFromSidebar,
-		deleteSection,
-		handleNewSection,
 		handleNewWorkspace,
 		handleOpenInFinder,
 		handleOpenSettings,
 		isRenaming,
-		renameSection,
 		renameValue,
 		setRenameValue,
 		startRename,
 		submitRename,
-		toggleSectionCollapsed,
 	} = useDashboardSidebarProjectSectionActions({
 		project,
 	});
 
-	const totalWorkspaceCount = flattenedCollapsedWorkspaces.length;
+	const totalItemCount =
+		project.agentChats.length || flattenedCollapsedWorkspaces.length;
 
 	if (isSidebarCollapsed) {
 		return (
 			<DashboardSidebarProjectContextMenu
-				onCreateSection={handleNewSection}
 				onOpenInFinder={handleOpenInFinder}
 				onOpenSettings={handleOpenSettings}
 				onRemoveFromSidebar={confirmRemoveFromSidebar}
@@ -74,7 +70,8 @@ export function DashboardSidebarProjectSection({
 						projectName={project.name}
 						iconUrl={project.iconUrl}
 						isCollapsed={project.isCollapsed}
-						totalWorkspaceCount={totalWorkspaceCount}
+						totalItemCount={totalItemCount}
+						agentChats={project.agentChats}
 						workspaces={flattenedCollapsedWorkspaces}
 						workspaceShortcutLabels={workspaceShortcutLabels}
 						onWorkspaceHover={onWorkspaceHover}
@@ -88,7 +85,6 @@ export function DashboardSidebarProjectSection({
 	return (
 		<div className={cn("border-b border-border last:border-b-0")}>
 			<DashboardSidebarProjectContextMenu
-				onCreateSection={handleNewSection}
 				onOpenInFinder={handleOpenInFinder}
 				onOpenSettings={handleOpenSettings}
 				onRemoveFromSidebar={confirmRemoveFromSidebar}
@@ -121,14 +117,11 @@ export function DashboardSidebarProjectSection({
 						className="overflow-hidden"
 					>
 						<DashboardSidebarExpandedProjectContent
-							projectId={project.id}
 							isCollapsed={project.isCollapsed}
 							projectChildren={project.children}
+							agentChats={project.agentChats}
 							workspaceShortcutLabels={workspaceShortcutLabels}
 							onWorkspaceHover={onWorkspaceHover}
-							onDeleteSection={deleteSection}
-							onRenameSection={renameSection}
-							onToggleSectionCollapse={toggleSectionCollapsed}
 						/>
 					</motion.div>
 				)}

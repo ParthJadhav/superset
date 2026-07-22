@@ -167,11 +167,7 @@ function DashboardLayout() {
 			{isV2CloudEnabled ? (
 				<DashboardSidebar isCollapsed={isWorkspaceSidebarCollapsed()} />
 			) : (
-				<WorkspaceSidebar
-					isCollapsed={isWorkspaceSidebarCollapsed()}
-					activeProjectId={currentWorkspace?.projectId ?? null}
-					activeProjectName={currentWorkspace?.project?.name ?? null}
-				/>
+				<WorkspaceSidebar isCollapsed={isWorkspaceSidebarCollapsed()} />
 			)}
 		</ResizablePanel>
 	);

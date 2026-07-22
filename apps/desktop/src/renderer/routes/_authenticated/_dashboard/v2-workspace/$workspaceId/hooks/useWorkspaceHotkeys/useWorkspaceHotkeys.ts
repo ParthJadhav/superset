@@ -6,10 +6,13 @@ import {
 	type WorkspaceProps,
 	type WorkspaceStore,
 } from "@superset/panes";
+import { toast } from "@superset/ui/sonner";
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useTerminalAgentBindings } from "renderer/hooks/host-service/useTerminalAgentBindings";
 import { useV2UserPreferences } from "renderer/hooks/useV2UserPreferences";
 import { useHotkey } from "renderer/hotkeys";
 import type { V2TerminalPresetRow } from "renderer/routes/_authenticated/providers/CollectionsProvider/dashboardSidebarLocal";
+import { useAgentChatPinsStore } from "renderer/stores/agent-chat-pins";
 import { useRightSidebarToggleIntent } from "renderer/stores/right-sidebar-toggle-intent";
 import type { StoreApi } from "zustand";
 import type {
@@ -29,7 +32,9 @@ export function useWorkspaceHotkeys({
 	paneRegistry,
 	launcher,
 	onBeforeCloseTab,
+	workspaceId,
 }: {
+	workspaceId: string;
 	store: StoreApi<WorkspaceStore<PaneViewerData>>;
 	matchedPresets: V2TerminalPresetRow[];
 	executePreset: (preset: V2TerminalPresetRow) => void | Promise<void>;
@@ -39,6 +44,7 @@ export function useWorkspaceHotkeys({
 	onBeforeCloseTab?: WorkspaceProps<PaneViewerData>["onBeforeCloseTab"];
 }) {
 	const { setRightSidebarOpen, setRightSidebarTab } = useV2UserPreferences();
+	const terminalAgentBindings = useTerminalAgentBindings(workspaceId);
 	const visiblePresets = useMemo(
 		() => matchedPresets.filter((preset) => preset.pinnedToBar !== false),
 		[matchedPresets],
@@ -79,6 +85,24 @@ export function useWorkspaceHotkeys({
 				},
 			],
 		});
+	});
+
+	useHotkey("TOGGLE_PIN_CHAT", () => {
+		const activePane = store.getState().getActivePane()?.pane;
+		if (activePane?.kind !== "terminal") {
+			toast.info("Focus an agent terminal to pin its chat");
+			return;
+		}
+		const { terminalId } = activePane.data as TerminalPaneData;
+		if (!terminalAgentBindings.has(terminalId)) {
+			toast.info("This terminal is not running an agent chat");
+			return;
+		}
+
+		const pins = useAgentChatPinsStore.getState();
+		const wasPinned = pins.pinnedTerminalIds.includes(terminalId);
+		pins.togglePinned(terminalId);
+		toast.success(wasPinned ? "Chat unpinned" : "Chat pinned");
 	});
 
 	useHotkey("OPEN_DIFF_VIEWER", () => {
@@ -197,6 +221,64 @@ export function useWorkspaceHotkeys({
 	useHotkey("JUMP_TO_TAB_9", () => switchToTab(8));
 
 	// --- Pane management ---
+
+	const isOpeningTerminalPanelRef = useRef(false);
+	useHotkey("OPEN_TERMINAL_PANEL", async () => {
+		if (isOpeningTerminalPanelRef.current) return;
+		isOpeningTerminalPanelRef.current = true;
+		try {
+			const state = store.getState();
+			const activeTab = state.getActiveTab();
+			if (!activeTab) {
+				const terminalId = await launcher.create();
+				state.addTab({
+					panes: [
+						{
+							kind: "terminal",
+							data: {
+								terminalId,
+								placement: "bottom-panel",
+							} as TerminalPaneData,
+						},
+					],
+				});
+				return;
+			}
+
+			const existingPanel = Object.values(activeTab.panes).find((pane) => {
+				if (pane.kind !== "terminal") return false;
+				return (pane.data as TerminalPaneData).placement === "bottom-panel";
+			});
+			if (existingPanel) {
+				state.setActivePane({
+					tabId: activeTab.id,
+					paneId: existingPanel.id,
+				});
+				return;
+			}
+
+			const terminalId = await launcher.create();
+			state.addPaneToEdge({
+				tabId: activeTab.id,
+				position: "bottom",
+				sizePercentage: 30,
+				pane: {
+					kind: "terminal",
+					data: {
+						terminalId,
+						placement: "bottom-panel",
+					} as TerminalPaneData,
+				},
+			});
+		} catch (error) {
+			toast.error("Couldn't open the terminal panel", {
+				description:
+					error instanceof Error ? error.message : "Unknown terminal error",
+			});
+		} finally {
+			isOpeningTerminalPanelRef.current = false;
+		}
+	});
 
 	const moveFocusDirectional = useCallback(
 		(dir: FocusDirection) => {

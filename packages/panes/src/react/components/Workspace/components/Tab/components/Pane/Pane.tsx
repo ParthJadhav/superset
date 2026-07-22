@@ -237,6 +237,9 @@ export function Pane<TData>({
 	const titleContent = definition?.renderTitle?.(context);
 	const headerExtras = definition?.renderHeaderExtras?.(context);
 	const toolbar = definition?.renderToolbar?.(context);
+	const showHeader = !(
+		definition?.hideHeaderWhenSolo === true && parentDirection === null
+	);
 
 	const isDropTarget = isOver && canDrop;
 
@@ -254,22 +257,24 @@ export function Pane<TData>({
 				}`}
 				onMouseDown={context.actions.focus}
 			>
-				<PaneHeader
-					title={title}
-					icon={icon}
-					isActive={isActive}
-					titleContent={titleContent}
-					headerExtras={headerExtras}
-					toolbar={toolbar}
-					actionsContent={<context.components.PaneHeaderActions />}
-					paneId={pane.id}
-					onClick={
-						definition?.onHeaderClick
-							? () => definition.onHeaderClick?.(context)
-							: context.actions.pin
-					}
-					onMiddleClick={context.actions.close}
-				/>
+				{showHeader && (
+					<PaneHeader
+						title={title}
+						icon={icon}
+						isActive={isActive}
+						titleContent={titleContent}
+						headerExtras={headerExtras}
+						toolbar={toolbar}
+						actionsContent={<context.components.PaneHeaderActions />}
+						paneId={pane.id}
+						onClick={
+							definition?.onHeaderClick
+								? () => definition.onHeaderClick?.(context)
+								: context.actions.pin
+						}
+						onMiddleClick={context.actions.close}
+					/>
+				)}
 				<PaneContent>
 					{definition ? (
 						definition.renderPane(context)

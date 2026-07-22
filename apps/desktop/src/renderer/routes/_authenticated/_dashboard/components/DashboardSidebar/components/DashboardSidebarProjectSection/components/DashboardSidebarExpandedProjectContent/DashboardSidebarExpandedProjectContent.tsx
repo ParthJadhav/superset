@@ -1,54 +1,48 @@
-import { DndContext, DragOverlay } from "@dnd-kit/core";
-import {
-	SortableContext,
-	verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
 import { AnimatePresence, motion } from "framer-motion";
-import { createPortal } from "react-dom";
-import { useSidebarDnd } from "../../../../hooks/useSidebarDnd";
-import { parseId } from "../../../../hooks/useSidebarDnd/useSidebarDnd";
-import type { DashboardSidebarProjectChild } from "../../../../types";
-import { SidebarDragOverlay } from "../../../SidebarDragOverlay";
-import { SortableSectionHeader } from "../../../SortableSectionHeader";
-import { SortableWorkspaceItem } from "../../../SortableWorkspaceItem";
+import { useMemo } from "react";
+import { useAgentChatPinsStore } from "renderer/stores/agent-chat-pins";
+import type {
+	DashboardSidebarAgentChat,
+	DashboardSidebarProjectChild,
+} from "../../../../types";
+import {
+	getWorkspacesWithoutAgentChats,
+	sortAgentChats,
+} from "../../../../utils/agentChats";
+import { getProjectChildrenWorkspaces } from "../../../../utils/projectChildren";
+import { DashboardSidebarAgentChatItem } from "../../../DashboardSidebarAgentChatItem";
+import { DashboardSidebarWorkspaceItem } from "../../../DashboardSidebarWorkspaceItem";
 
 interface DashboardSidebarExpandedProjectContentProps {
-	projectId: string;
 	isCollapsed: boolean;
 	projectChildren: DashboardSidebarProjectChild[];
+	agentChats: DashboardSidebarAgentChat[];
 	workspaceShortcutLabels: Map<string, string>;
 	onWorkspaceHover: (workspaceId: string) => void | Promise<void>;
-	onDeleteSection: (sectionId: string) => void;
-	onRenameSection: (sectionId: string, name: string) => void;
-	onToggleSectionCollapse: (sectionId: string) => void;
 }
 
 export function DashboardSidebarExpandedProjectContent({
-	projectId,
 	isCollapsed,
 	projectChildren,
+	agentChats,
 	workspaceShortcutLabels,
 	onWorkspaceHover,
-	onDeleteSection,
-	onRenameSection,
-	onToggleSectionCollapse,
 }: DashboardSidebarExpandedProjectContentProps) {
-	const {
-		sensors,
-		measuring,
-		collisionDetection,
-		flatItems,
-		sortableItems,
-		activeId,
-		activeType,
-		activeItem,
-		predictedColor,
-		groupInfo,
-		collapsedSectionIds,
-		workspacesById,
-		sectionsById,
-		handlers,
-	} = useSidebarDnd({ projectId, projectChildren });
+	const pinnedTerminalIds = useAgentChatPinsStore(
+		(state) => state.pinnedTerminalIds,
+	);
+	const orderedChats = useMemo(
+		() => sortAgentChats(agentChats, pinnedTerminalIds),
+		[agentChats, pinnedTerminalIds],
+	);
+	const workspaces = useMemo(
+		() => getProjectChildrenWorkspaces(projectChildren),
+		[projectChildren],
+	);
+	const fallbackWorkspaces = useMemo(
+		() => getWorkspacesWithoutAgentChats(workspaces, agentChats),
+		[workspaces, agentChats],
+	);
 
 	return (
 		<AnimatePresence initial={false}>
@@ -58,92 +52,25 @@ export function DashboardSidebarExpandedProjectContent({
 					animate={{ height: "auto", opacity: 1 }}
 					exit={{ height: 0, opacity: 0 }}
 					transition={{ duration: 0.15, ease: "easeOut" }}
-					className="overflow-hidden"
+					className="overflow-hidden pb-1"
 				>
-					<div className="pb-1">
-						<DndContext
-							sensors={sensors}
-							collisionDetection={collisionDetection}
-							measuring={measuring}
-							{...handlers}
-						>
-							<SortableContext
-								items={sortableItems}
-								strategy={verticalListSortingStrategy}
-							>
-								{flatItems.map((id) => {
-									const parsed = parseId(id);
-									if (!parsed) return null;
+					{orderedChats.map((chat) => (
+						<DashboardSidebarAgentChatItem key={chat.terminalId} chat={chat} />
+					))}
 
-									if (parsed.type === "section") {
-										const section = sectionsById.get(parsed.realId);
-										if (!section) return null;
-										return (
-											<SortableSectionHeader
-												key={String(id)}
-												sortableId={String(id)}
-												section={section}
-												onDelete={onDeleteSection}
-												onRename={onRenameSection}
-												onToggleCollapse={onToggleSectionCollapse}
-											/>
-										);
-									}
-
-									const workspace = workspacesById.get(parsed.realId);
-									if (!workspace) return null;
-									const group = groupInfo.get(parsed.realId);
-									const isInSection = !!group;
-									const isInCollapsedSection =
-										isInSection && collapsedSectionIds.has(group.sectionId);
-									const hidden =
-										isInCollapsedSection ||
-										(activeType === "section" && isInSection);
-
-									return (
-										<AnimatePresence key={String(id)} initial={false}>
-											{!hidden && (
-												<motion.div
-													initial={{ height: 0, opacity: 0 }}
-													animate={{ height: "auto", opacity: 1 }}
-													exit={{ height: 0, opacity: 0 }}
-													transition={{ duration: 0.15, ease: "easeOut" }}
-												>
-													<SortableWorkspaceItem
-														sortableId={String(id)}
-														workspace={workspace}
-														accentColor={
-															activeId === id ? predictedColor : group?.color
-														}
-														isInSection={groupInfo.has(parsed.realId)}
-														onHoverCardOpen={() =>
-															onWorkspaceHover(parsed.realId)
-														}
-														shortcutLabel={workspaceShortcutLabels.get(
-															parsed.realId,
-														)}
-														disabled={
-															workspace.type === "main" &&
-															workspace.hostType === "local-device"
-														}
-													/>
-												</motion.div>
-											)}
-										</AnimatePresence>
-									);
-								})}
-							</SortableContext>
-
-							{createPortal(
-								<DragOverlay dropAnimation={null}>
-									{activeId ? (
-										<SidebarDragOverlay activeItem={activeItem} />
-									) : null}
-								</DragOverlay>,
-								document.body,
-							)}
-						</DndContext>
-					</div>
+					{fallbackWorkspaces.length > 0 && orderedChats.length > 0 && (
+						<div className="px-5 pb-1 pt-2 text-[10px] font-medium text-muted-foreground">
+							No active chat
+						</div>
+					)}
+					{fallbackWorkspaces.map((workspace) => (
+						<DashboardSidebarWorkspaceItem
+							key={workspace.id}
+							workspace={workspace}
+							onHoverCardOpen={() => onWorkspaceHover(workspace.id)}
+							shortcutLabel={workspaceShortcutLabels.get(workspace.id)}
+						/>
+					))}
 				</motion.div>
 			)}
 		</AnimatePresence>

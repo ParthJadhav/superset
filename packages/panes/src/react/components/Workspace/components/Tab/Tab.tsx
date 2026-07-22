@@ -6,6 +6,7 @@ import {
 import { useEffect, useRef } from "react";
 import type { StoreApi } from "zustand/vanilla";
 import type { WorkspaceStore } from "../../../../../core/store";
+import { getPaneIdsInLayout } from "../../../../../core/store/utils";
 import type {
 	LayoutNode,
 	SplitPath,
@@ -56,6 +57,7 @@ function SplitView<TData>({
 	const firstSize = node.splitPercentage ?? 50;
 	const secondSize = 100 - firstSize;
 	const resizeSourceId = `${tab.id}:${path.join(".") || "root"}`;
+	const splitIdentity = `${node.direction}:${getPaneIdsInLayout(node.first).join(",")}|${getPaneIdsInLayout(node.second).join(",")}`;
 
 	useEffect(() => {
 		return () => {
@@ -65,6 +67,7 @@ function SplitView<TData>({
 
 	return (
 		<ResizablePanelGroup
+			key={splitIdentity}
 			ref={groupRef}
 			className="min-h-full min-w-full overflow-auto"
 			direction={node.direction}

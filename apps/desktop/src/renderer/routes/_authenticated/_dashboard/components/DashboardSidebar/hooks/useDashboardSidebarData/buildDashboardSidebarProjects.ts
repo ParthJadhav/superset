@@ -81,6 +81,7 @@ export function buildDashboardSidebarProjects({
 		projectsById.set(project.id, {
 			...project,
 			children: [],
+			agentChats: [],
 			sectionMap: new Map(),
 			childEntries: [],
 			orphanedWorkspaces: [],

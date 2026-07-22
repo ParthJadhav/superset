@@ -16,21 +16,21 @@ import { useWorkspace } from "../providers/WorkspaceProvider";
 import { AddTabMenu } from "./components/AddTabMenu";
 import { BackgroundTerminalsButton } from "./components/BackgroundTerminalsButton";
 import { V2NotificationStatusIndicator } from "./components/V2NotificationStatusIndicator";
-import { V2PresetsBar } from "./components/V2PresetsBar";
 import { V2WorkspaceRunButton } from "./components/V2WorkspaceRunButton";
 import { WorkspaceEmptyState } from "./components/WorkspaceEmptyState";
 import { WorkspaceMissingWorktreeState } from "./components/WorkspaceMissingWorktreeState";
 import { WorkspaceSidebar } from "./components/WorkspaceSidebar";
+import { WorkspaceTabIcon } from "./components/WorkspaceTabIcon";
 import { useAutoAdoptBackgroundSessions } from "./hooks/useAutoAdoptBackgroundSessions";
 import { useBrowserShellInteractionPassthrough } from "./hooks/useBrowserShellInteractionPassthrough";
 import { useClearActivePaneAttention } from "./hooks/useClearActivePaneAttention";
 import { useConsumeAutomationRunLink } from "./hooks/useConsumeAutomationRunLink";
 import { useConsumeOpenUrlRequest } from "./hooks/useConsumeOpenUrlRequest";
+import { useCreateAgentTerminal } from "./hooks/useCreateAgentTerminal";
 import { useCreatePendingMigratedTerminals } from "./hooks/useCreatePendingMigratedTerminals";
 import { useDefaultContextMenuActions } from "./hooks/useDefaultContextMenuActions";
 import { useDefaultPaneActions } from "./hooks/useDefaultPaneActions";
 import { usePaneRegistry } from "./hooks/usePaneRegistry";
-import { renderBrowserTabIcon } from "./hooks/usePaneRegistry/components/BrowserPane";
 import { useSlotElement } from "./hooks/useSlotElement";
 import { useTabCloseGuard } from "./hooks/useTabCloseGuard";
 import { useV2PresetExecution } from "./hooks/useV2PresetExecution";
@@ -124,14 +124,13 @@ function V2WorkspaceContent() {
 		setRightSidebarOpen,
 		setRightSidebarTab,
 		setRightSidebarWidth,
-		setShowPresetsBar,
 	} = useV2UserPreferences();
-	const showPresetsBar = v2UserPreferences.showPresetsBar;
 	const sidebarOpen = v2UserPreferences.rightSidebarOpen;
 	const { store, isLayoutReady } = useV2WorkspacePaneLayout();
 	useClearActivePaneAttention({ store });
 	const launcher = useV2TerminalLauncher();
 	const {
+		agents,
 		matchedPresets,
 		newTabPresets,
 		executePreset,
@@ -140,6 +139,7 @@ function V2WorkspaceContent() {
 		store,
 		launcher,
 	});
+	const createAgentTerminal = useCreateAgentTerminal({ store });
 	const workspaceRun = useV2WorkspaceRun({
 		store,
 		launcher,
@@ -180,6 +180,7 @@ function V2WorkspaceContent() {
 		onRevealPath: revealPath,
 		launcher,
 		store,
+		createAgentTerminal,
 	});
 	const defaultContextMenuActions = useDefaultContextMenuActions({
 		paneRegistry,
@@ -246,6 +247,7 @@ function V2WorkspaceContent() {
 	const sidebarSlotEl = useSlotElement("workspace-right-sidebar-slot");
 
 	useWorkspaceHotkeys({
+		workspaceId,
 		store,
 		matchedPresets,
 		executePreset,
@@ -292,29 +294,26 @@ function V2WorkspaceContent() {
 							registry={paneRegistry}
 							paneActions={defaultPaneActions}
 							contextMenuActions={defaultContextMenuActions}
-							renderTabIcon={renderBrowserTabIcon}
+							renderTabIcon={(tab) => (
+								<WorkspaceTabIcon tab={tab} workspaceId={workspaceId} />
+							)}
 							renderTabAccessory={(tab) => (
 								<V2NotificationStatusIndicator
 									sources={getV2NotificationSourcesForTab(tab)}
 								/>
 							)}
-							renderBelowTabBar={() =>
-								showPresetsBar ? (
-									<V2PresetsBar
-										matchedPresets={matchedPresets}
-										executePreset={executePreset}
-										showPresetsBar={showPresetsBar}
-										onToggleShowPresetsBar={setShowPresetsBar}
-									/>
-								) : null
-							}
 							renderAddTabMenu={() => (
 								<AddTabMenu
+									agents={agents}
+									onAddAgent={(configId) => {
+										void createAgentTerminal({
+											configId,
+											placement: "new-tab",
+										});
+									}}
 									onAddTerminal={addTerminalTab}
 									onAddChat={addChatTab}
 									onAddBrowser={addBrowserTab}
-									showPresetsBar={showPresetsBar}
-									onToggleShowPresetsBar={setShowPresetsBar}
 								/>
 							)}
 							renderTabBarTrailing={() => (

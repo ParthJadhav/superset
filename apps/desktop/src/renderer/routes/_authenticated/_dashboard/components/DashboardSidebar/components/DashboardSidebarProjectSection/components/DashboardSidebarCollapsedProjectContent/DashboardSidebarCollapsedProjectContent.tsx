@@ -1,9 +1,18 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@superset/ui/tooltip";
 import { cn } from "@superset/ui/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { type ComponentPropsWithoutRef, forwardRef } from "react";
+import { type ComponentPropsWithoutRef, forwardRef, useMemo } from "react";
 import { ProjectThumbnail } from "renderer/routes/_authenticated/components/ProjectThumbnail";
-import type { DashboardSidebarWorkspace } from "../../../../types";
+import { useAgentChatPinsStore } from "renderer/stores/agent-chat-pins";
+import type {
+	DashboardSidebarAgentChat,
+	DashboardSidebarWorkspace,
+} from "../../../../types";
+import {
+	getWorkspacesWithoutAgentChats,
+	sortAgentChats,
+} from "../../../../utils/agentChats";
+import { DashboardSidebarAgentChatItem } from "../../../DashboardSidebarAgentChatItem";
 import { DashboardSidebarWorkspaceItem } from "../../../DashboardSidebarWorkspaceItem";
 
 interface DashboardSidebarCollapsedProjectContentProps
@@ -11,7 +20,8 @@ interface DashboardSidebarCollapsedProjectContentProps
 	projectName: string;
 	iconUrl: string | null;
 	isCollapsed: boolean;
-	totalWorkspaceCount: number;
+	totalItemCount: number;
+	agentChats: DashboardSidebarAgentChat[];
 	workspaces: DashboardSidebarWorkspace[];
 	workspaceShortcutLabels: Map<string, string>;
 	onWorkspaceHover: (workspaceId: string) => void | Promise<void>;
@@ -27,7 +37,8 @@ export const DashboardSidebarCollapsedProjectContent = forwardRef<
 			projectName,
 			iconUrl,
 			isCollapsed,
-			totalWorkspaceCount,
+			totalItemCount,
+			agentChats,
 			workspaces,
 			workspaceShortcutLabels,
 			onWorkspaceHover,
@@ -37,6 +48,17 @@ export const DashboardSidebarCollapsedProjectContent = forwardRef<
 		},
 		ref,
 	) => {
+		const pinnedTerminalIds = useAgentChatPinsStore(
+			(state) => state.pinnedTerminalIds,
+		);
+		const orderedChats = useMemo(() => {
+			return sortAgentChats(agentChats, pinnedTerminalIds);
+		}, [agentChats, pinnedTerminalIds]);
+		const fallbackWorkspaces = useMemo(
+			() => getWorkspacesWithoutAgentChats(workspaces, agentChats),
+			[workspaces, agentChats],
+		);
+
 		return (
 			<div
 				ref={ref}
@@ -62,8 +84,8 @@ export const DashboardSidebarCollapsedProjectContent = forwardRef<
 					<TooltipContent side="right" className="flex flex-col gap-0.5">
 						<span className="font-medium">{projectName}</span>
 						<span className="text-xs text-muted-foreground">
-							{totalWorkspaceCount} workspace
-							{totalWorkspaceCount !== 1 ? "s" : ""}
+							{totalItemCount} {agentChats.length > 0 ? "chat" : "workspace"}
+							{totalItemCount !== 1 ? "s" : ""}
 						</span>
 					</TooltipContent>
 				</Tooltip>
@@ -78,7 +100,14 @@ export const DashboardSidebarCollapsedProjectContent = forwardRef<
 							className="overflow-hidden w-full"
 						>
 							<div className="flex w-full flex-col pt-1">
-								{workspaces.map((workspace) => (
+								{orderedChats.map((chat) => (
+									<DashboardSidebarAgentChatItem
+										key={chat.terminalId}
+										chat={chat}
+										isCollapsed
+									/>
+								))}
+								{fallbackWorkspaces.map((workspace) => (
 									<DashboardSidebarWorkspaceItem
 										key={workspace.id}
 										workspace={workspace}

@@ -310,6 +310,7 @@ export function useV2PresetExecution({
 	);
 
 	return {
+		agents,
 		matchedPresets,
 		newTabPresets,
 		executePreset,

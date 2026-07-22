@@ -1,4 +1,4 @@
-export const TAB_WIDTH = 160;
+export const TAB_WIDTH = 200;
 
 export function computeInsertIndex(
 	clientX: number,

@@ -30,21 +30,22 @@ import { UpdatesPill } from "renderer/components/UpdatesPill";
 import { useHotkeyDisplay } from "renderer/hotkeys";
 import { OrganizationDropdown } from "renderer/routes/_authenticated/_dashboard/components/TopBar/components/OrganizationDropdown";
 import { useDashboardSidebarState } from "renderer/routes/_authenticated/hooks/useDashboardSidebarState";
-import { useLocalHostService } from "renderer/routes/_authenticated/providers/LocalHostServiceProvider";
+import { useAgentChatPinsStore } from "renderer/stores/agent-chat-pins";
 import { useInlineWorkspacePortsEnabled } from "renderer/stores/inline-workspace-ports";
 import { useSidebarWorkspacesCollapseStore } from "renderer/stores/sidebar-workspaces-collapse";
 import { DashboardSidebarHeader } from "./components/DashboardSidebarHeader";
 import { DashboardSidebarHoverCardOverlay } from "./components/DashboardSidebarHoverCardOverlay";
+import { DashboardSidebarPinnedChats } from "./components/DashboardSidebarPinnedChats";
 import { DashboardSidebarPortsList } from "./components/DashboardSidebarPortsList";
 import { DashboardSidebarProjectSection } from "./components/DashboardSidebarProjectSection";
 import { DashboardSidebarSectionRenameProvider } from "./components/DashboardSidebarSectionRenameContext";
 import { DashboardSidebarWorkspacesHeader } from "./components/DashboardSidebarWorkspacesHeader";
-import { V2SetupScriptCard } from "./components/V2SetupScriptCard";
 import { useDashboardSidebarData } from "./hooks/useDashboardSidebarData";
 import { useDashboardSidebarShortcuts } from "./hooks/useDashboardSidebarShortcuts";
 import { DashboardSidebarHoverProvider } from "./providers/DashboardSidebarHoverProvider";
 import { DashboardSidebarPortsProvider } from "./providers/DashboardSidebarPortsProvider";
 import type { DashboardSidebarProject } from "./types";
+import { sortAgentChats } from "./utils/agentChats";
 
 interface DashboardSidebarProps {
 	isCollapsed?: boolean;
@@ -109,12 +110,12 @@ export function DashboardSidebar({
 	const matchRoute = useMatchRoute();
 	const settingsHotkey = useHotkeyDisplay("OPEN_SETTINGS").text;
 	const isSettingsOpen = !!matchRoute({ to: "/settings", fuzzy: true });
-	const { activeHostUrl } = useLocalHostService();
 	const inlineWorkspacePortsEnabled = useInlineWorkspacePortsEnabled();
-	const v2RouteMatch = matchRoute({ to: "/v2-workspace/$workspaceId" });
-	const activeV2WorkspaceId = v2RouteMatch ? v2RouteMatch.workspaceId : null;
 	const workspacesListCollapsed = useSidebarWorkspacesCollapseStore(
 		(s) => s.isCollapsed,
+	);
+	const pinnedTerminalIds = useAgentChatPinsStore(
+		(state) => state.pinnedTerminalIds,
 	);
 
 	const sensors = useSensors(
@@ -146,26 +147,15 @@ export function DashboardSidebar({
 	}, [groups, projectOrder]);
 
 	const workspaceShortcutLabels = useDashboardSidebarShortcuts(orderedGroups);
-
-	const activeV2Project = useMemo(() => {
-		if (!activeV2WorkspaceId) return null;
-		for (const project of groups) {
-			for (const child of project.children) {
-				if (
-					child.type === "workspace" &&
-					child.workspace.id === activeV2WorkspaceId
-				) {
-					return project;
-				}
-				if (child.type === "section") {
-					for (const ws of child.section.workspaces) {
-						if (ws.id === activeV2WorkspaceId) return project;
-					}
-				}
-			}
-		}
-		return null;
-	}, [groups, activeV2WorkspaceId]);
+	const pinnedChats = useMemo(() => {
+		const pinnedSet = new Set(pinnedTerminalIds);
+		return sortAgentChats(
+			groups
+				.flatMap((project) => project.agentChats)
+				.filter((chat) => pinnedSet.has(chat.terminalId)),
+			pinnedTerminalIds,
+		);
+	}, [groups, pinnedTerminalIds]);
 
 	const handleDragEnd = useCallback(
 		({ active, over }: DragEndEvent) => {
@@ -191,12 +181,15 @@ export function DashboardSidebar({
 						<div className="flex h-full flex-col border-r border-border bg-muted/45 dark:bg-muted/35">
 							<DashboardSidebarHeader isCollapsed={isCollapsed} />
 
-							{!isCollapsed && <DashboardSidebarWorkspacesHeader />}
-
 							<OverflowFadeContainer
 								fadeEdges={["top", "bottom"]}
 								className="flex-1 overflow-y-auto hide-scrollbar"
 							>
+								<DashboardSidebarPinnedChats
+									chats={pinnedChats}
+									isCollapsed={isCollapsed}
+								/>
+								{!isCollapsed && <DashboardSidebarWorkspacesHeader />}
 								{(isCollapsed || !workspacesListCollapsed) && (
 									<DndContext
 										sensors={sensors}
@@ -250,13 +243,6 @@ export function DashboardSidebar({
 							</OverflowFadeContainer>
 							{!isCollapsed && !inlineWorkspacePortsEnabled && (
 								<DashboardSidebarPortsList />
-							)}
-							{!isCollapsed && activeV2Project && activeHostUrl && (
-								<V2SetupScriptCard
-									hostUrl={activeHostUrl}
-									projectId={activeV2Project.id}
-									projectName={activeV2Project.name}
-								/>
 							)}
 							<HiringBanner surface="v2" isCollapsed={isCollapsed} />
 							<div

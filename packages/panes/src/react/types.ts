@@ -64,6 +64,8 @@ export interface PaneTitleSource {
 export interface PaneDefinition<TData> {
 	renderPane(context: RendererContext<TData>): ReactNode;
 	getTitle?(pane: Pane<TData>): string | undefined;
+	/** Hide redundant identity chrome when this pane is the tab's only pane. */
+	hideHeaderWhenSolo?: boolean;
 	/**
 	 * Optional reactive title source. When defined, the tab title (and other
 	 * title-aware UI) subscribes to it and re-renders when the runtime title

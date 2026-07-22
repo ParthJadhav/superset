@@ -12,6 +12,7 @@ import type {
 	TerminalAgentBinding,
 	TerminalAgentId,
 } from "../../../terminal-agents";
+import { resolveAgentSessionTitle } from "../../../terminal-agents/session-title";
 import { protectedProcedure, router } from "../../index";
 
 type GetOrCreateResult = {
@@ -50,12 +51,21 @@ export const terminalAgentsRouter = router({
 				definitionId: agentDefinitionIdSchema.optional(),
 			}),
 		)
-		.query(({ ctx, input }) => {
+		.query(async ({ ctx, input }) => {
 			const { workspaceId, agentId, definitionId } = input;
-			return ctx.terminalAgentStore.listByWorkspace(workspaceId, {
+			const bindings = ctx.terminalAgentStore.listByWorkspace(workspaceId, {
 				...(agentId ? { agentId } : {}),
 				...(definitionId ? { definitionId } : {}),
 			});
+			return Promise.all(
+				bindings.map(async (binding) => {
+					const sessionTitle = await resolveAgentSessionTitle({
+						agentId: binding.agentId,
+						agentSessionId: binding.agentSessionId,
+					});
+					return { ...binding, sessionTitle };
+				}),
+			);
 		}),
 
 	findActive: protectedProcedure

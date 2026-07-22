@@ -348,6 +348,16 @@ export const HOTKEYS_REGISTRY = {
 		category: "Layout",
 		description: "Close the current pane",
 	},
+	OPEN_TERMINAL_PANEL: {
+		key: {
+			mac: L("meta+j"),
+			windows: L("ctrl+j"),
+			linux: L("ctrl+j"),
+		},
+		label: "Open Terminal Panel",
+		category: "Layout",
+		description: "Open or focus a full-width terminal pane at the bottom",
+	},
 
 	// Terminal
 	FIND_IN_TERMINAL: {
@@ -418,6 +428,16 @@ export const HOTKEYS_REGISTRY = {
 		},
 		label: "New Chat",
 		category: "Terminal",
+	},
+	TOGGLE_PIN_CHAT: {
+		key: {
+			mac: L("meta+alt+p"),
+			windows: L("ctrl+alt+p"),
+			linux: L("ctrl+alt+p"),
+		},
+		label: "Pin or Unpin Agent Chat",
+		category: "Terminal",
+		description: "Pin or unpin the agent chat in the active terminal pane",
 	},
 	REOPEN_TAB: {
 		key: {
@@ -663,9 +683,9 @@ export const HOTKEYS_REGISTRY = {
 	// Chat
 	FOCUS_CHAT_INPUT: {
 		key: {
-			mac: L("meta+j"),
-			windows: L("ctrl+shift+j"),
-			linux: L("ctrl+shift+j"),
+			mac: L("meta+shift+j"),
+			windows: L("ctrl+shift+alt+j"),
+			linux: L("ctrl+shift+alt+j"),
 		},
 		label: "Focus Chat Input",
 		category: "Terminal",
