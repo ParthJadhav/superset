@@ -143,3 +143,84 @@ identity in separate navigation rows makes active work harder to scan.
   expanded/collapsed sidebar checks, and screenshots.
 - A packaged production build completed, passed deep code-signature validation,
   and launched with its bundled host and terminal services.
+
+---
+
+## 2026-07-22 — Keyboard-first terminal and harness navigation
+
+- **Status:** Active fork decision
+- **Implementation commit:**
+  `e8fc016e698cf9c79c9bfb2b0815920fcdd142da`
+- **Parent commit:** `0ef6d2be6a1626bd0c60e181cba49af046cc1e91`
+- **Commit subject:**
+  `feat(desktop): add keyboard-first terminal and harness navigation`
+- **Scope:** Desktop hotkeys, workspace tab picker, pane title resolution, and
+  shared panes package
+
+### Why this fork differs
+
+Terminal access and new agent tabs are primary navigation actions. They should
+be available from stable, memorable shortcuts without competing legacy
+bindings, and opening a bottom utility panel must not replace the identity of
+the conversation tab above it.
+
+### Active fork decisions
+
+#### `Cmd+J` exclusively controls the bottom terminal
+
+- On macOS, `Cmd+J` opens or focuses the bottom terminal panel by default.
+- Remove the previous default `Cmd+J` assignment from chat-input focus; that
+  action remains customizable but has no competing default binding.
+- Repeated terminal shortcut presses focus the existing bottom panel instead of
+  adding duplicates.
+
+#### Bottom utility panes do not rename top tabs
+
+- A terminal or browser opened as the bottom panel cannot drive the enclosing
+  top tab's title or icon.
+- Focusing the bottom terminal must preserve the conversation or workspace
+  identity already shown in the top tab.
+- Regular panes outside the bottom-panel role retain their existing title
+  resolution behavior.
+
+#### `Cmd+T` opens the harness picker
+
+- On macOS, `Cmd+T` opens the same controlled harness picker as the tab-bar add
+  button. Windows and Linux use `Ctrl+Shift+T` to avoid their native new-tab
+  convention.
+- The old default new-group binding is removed, while the action remains
+  available for custom keybinding.
+- While the picker is open, number keys `1` through `4` immediately create a
+  tab for the corresponding visible harness.
+- A pencil action enters edit mode so users can hide harnesses from the picker,
+  restore hidden harnesses, and persist that preference locally.
+
+### Preservation checklist for upstream conflicts
+
+- [ ] `Cmd+J` opens or focuses exactly one bottom terminal panel.
+- [ ] Chat-input focus does not reclaim the default `Cmd+J` binding.
+- [ ] Focusing a bottom terminal or browser leaves the top tab title and icon
+      unchanged.
+- [ ] `Cmd+T` opens the harness picker on macOS.
+- [ ] Number keys `1` through `4` launch the matching visible harness.
+- [ ] The pencil edit mode can hide and restore harnesses, with local
+      persistence.
+- [ ] Custom bindings remain possible for chat-input focus and new-group
+      actions.
+
+### Primary implementation areas
+
+- `apps/desktop/src/renderer/hotkeys/`
+- `apps/desktop/src/renderer/routes/_authenticated/_dashboard/v2-workspace/`
+- `packages/panes/src/react/components/Workspace/`
+- `packages/panes/src/react/types.ts`
+
+### Verification recorded for the implementation commit
+
+- Root lint passed with zero warnings.
+- Desktop and panes package typechecks passed.
+- Twenty-one focused hotkey, harness-picker, and pane-title tests passed.
+- The production desktop compile completed, including bundled CLI and PTY
+  daemon checks.
+- The production Electron preview launched from the exact worktree build, loaded
+  its renderer successfully, and adopted the existing PTY daemon sessions.
