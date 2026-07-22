@@ -33,6 +33,33 @@ self-referential and would change that hash.
 
 ---
 
+## 2026-07-22 — Manually runnable CI
+
+- **Status:** Active fork decision
+- **Implementation commit:**
+  `30a6584f545dd78e309dba0722030c12c6322c73`
+- **Parent commit:** `8e55cac014289784cdbd9e1e83827d2c46053ca8`
+- **Commit subject:** `ci: allow manual CI runs`
+- **Scope:** GitHub Actions CI workflow
+
+### Why this fork differs
+
+The CI workflow should be runnable on demand so its setup can be verified even
+when no new push or pull-request event is available.
+
+### Active fork decisions
+
+- Preserve the `workflow_dispatch` trigger alongside push and pull-request
+  triggers in `.github/workflows/ci.yml`.
+
+### Verification recorded for the implementation commit
+
+- Root lint passed with zero warnings.
+- The workflow change passed `git diff --check`.
+- GitHub-hosted CI verification is recorded on the pull request for this change.
+
+---
+
 ## 2026-07-22 — Agent-chat-first desktop navigation
 
 - **Status:** Active fork decision
