@@ -1,4 +1,4 @@
-import type { RendererContext, Tab } from "@superset/panes";
+import type { Pane, RendererContext, Tab } from "@superset/panes";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@superset/ui/tooltip";
 import { GlobeIcon } from "lucide-react";
 import { useCallback, useSyncExternalStore } from "react";
@@ -22,8 +22,14 @@ function getSingleBrowserPane(
 	return { id: pane.id, data: pane.data as BrowserPaneData };
 }
 
-export function renderBrowserTabIcon(tab: Tab<PaneViewerData>) {
-	const browser = getSingleBrowserPane(tab);
+export function renderBrowserTabIcon(
+	tab: Tab<PaneViewerData>,
+	titlePane?: Pane<PaneViewerData>,
+) {
+	const browser =
+		titlePane?.kind === "browser"
+			? { id: titlePane.id, data: titlePane.data as BrowserPaneData }
+			: getSingleBrowserPane(tab);
 	if (!browser?.data.faviconUrl) return null;
 	return (
 		<img src={browser.data.faviconUrl} alt="" className="size-3.5 shrink-0" />

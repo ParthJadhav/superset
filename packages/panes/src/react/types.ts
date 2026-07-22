@@ -64,6 +64,12 @@ export interface PaneTitleSource {
 export interface PaneDefinition<TData> {
 	renderPane(context: RendererContext<TData>): ReactNode;
 	getTitle?(pane: Pane<TData>): string | undefined;
+	/**
+	 * Whether this pane may supply the containing tab's title. Auxiliary panes
+	 * such as a bottom terminal panel can opt out so focusing them does not
+	 * replace the identity of the primary content above.
+	 */
+	canDriveTabTitle?(pane: Pane<TData>): boolean;
 	/** Hide redundant identity chrome when this pane is the tab's only pane. */
 	hideHeaderWhenSolo?: boolean;
 	/**
@@ -107,6 +113,8 @@ export interface WorkspaceProps<TData> {
 	renderTabIcon?: (tab: Tab<TData>) => ReactNode;
 	renderEmptyState?: () => ReactNode;
 	renderAddTabMenu?: () => ReactNode;
+	addTabMenuOpen?: boolean;
+	onAddTabMenuOpenChange?: (open: boolean) => void;
 	/** Rendered at the trailing (right) edge of the tab bar row. */
 	renderTabBarTrailing?: () => ReactNode;
 	renderBelowTabBar?: () => ReactNode;

@@ -2,16 +2,29 @@ import type { Pane, Tab } from "../../../../types";
 import type { PaneRegistry } from "../../../types";
 
 /**
- * The pane that drives the tab title: the only pane (single-pane tab) or
- * the active pane (multi-pane tab). Undefined for empty tabs or stale
- * activePaneId references.
+ * The pane that drives the tab title: the only pane in a single-pane tab, or
+ * the active eligible pane in a multi-pane tab. If the active pane opts out of
+ * tab-title ownership, the first eligible pane keeps the tab identity stable.
  */
 export function pickTabTitlePane<TData>(
 	tab: Tab<TData>,
+	registry: PaneRegistry<TData>,
 ): Pane<TData> | undefined {
-	const panes = Object.values(tab.panes);
+	const allPanes = Object.values(tab.panes);
+	if (allPanes.length === 1) return allPanes[0];
+
+	const panes = allPanes.filter(
+		(pane) => registry[pane.kind]?.canDriveTabTitle?.(pane) !== false,
+	);
 	if (panes.length === 1) return panes[0];
-	if (panes.length > 1 && tab.activePaneId) return tab.panes[tab.activePaneId];
+	if (panes.length > 1 && tab.activePaneId) {
+		const activePane = tab.panes[tab.activePaneId];
+		if (!activePane) return undefined;
+		if (registry[activePane.kind]?.canDriveTabTitle?.(activePane) !== false) {
+			return activePane;
+		}
+		return panes[0];
+	}
 	return undefined;
 }
 
@@ -29,7 +42,7 @@ export function resolveTabTitle<TData>(
 	registry: PaneRegistry<TData>,
 ): string {
 	if (tab.titleOverride) return tab.titleOverride;
-	const fromPane = paneTitle(pickTabTitlePane(tab), registry);
+	const fromPane = paneTitle(pickTabTitlePane(tab, registry), registry);
 	if (fromPane) return fromPane;
 	return `Tab ${tabs.indexOf(tab) + 1}`;
 }

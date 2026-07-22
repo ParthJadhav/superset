@@ -411,11 +411,21 @@ export const HOTKEYS_REGISTRY = {
 		category: "Terminal",
 		description: "Search text in the changes diff",
 	},
-	NEW_GROUP: {
+	OPEN_HARNESS_PICKER: {
 		key: {
 			mac: L("meta+t"),
 			windows: L("ctrl+shift+t"),
 			linux: L("ctrl+shift+t"),
+		},
+		label: "Open Harness Picker",
+		category: "Terminal",
+		description: "Choose an agent harness to open in a new tab",
+	},
+	NEW_GROUP: {
+		key: {
+			mac: null,
+			windows: null,
+			linux: null,
 		},
 		label: "New Terminal",
 		category: "Terminal",
@@ -683,9 +693,9 @@ export const HOTKEYS_REGISTRY = {
 	// Chat
 	FOCUS_CHAT_INPUT: {
 		key: {
-			mac: L("meta+shift+j"),
-			windows: L("ctrl+shift+alt+j"),
-			linux: L("ctrl+shift+alt+j"),
+			mac: null,
+			windows: null,
+			linux: null,
 		},
 		label: "Focus Chat Input",
 		category: "Terminal",

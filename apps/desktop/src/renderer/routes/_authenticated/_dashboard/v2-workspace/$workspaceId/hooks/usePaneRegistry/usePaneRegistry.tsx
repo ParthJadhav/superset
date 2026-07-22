@@ -289,6 +289,8 @@ export function usePaneRegistry({
 					),
 			},
 			terminal: {
+				canDriveTabTitle: (pane) =>
+					(pane.data as TerminalPaneData).placement !== "bottom-panel",
 				hideHeaderWhenSolo: true,
 				getIcon: (ctx) => {
 					const { terminalId } = ctx.pane.data as TerminalPaneData;

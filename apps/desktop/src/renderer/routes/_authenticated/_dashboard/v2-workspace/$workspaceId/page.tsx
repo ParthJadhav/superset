@@ -232,6 +232,7 @@ function V2WorkspaceContent() {
 	// here and would render the ResizablePanel without a width (full-bleed).
 	const sidebarWidth = v2UserPreferences.rightSidebarWidth ?? 340;
 	const [isSidebarResizing, setIsSidebarResizing] = useState(false);
+	const [addTabMenuOpen, setAddTabMenuOpen] = useState(false);
 	const { onSidebarResizeDragging, onWorkspaceInteractionStateChange } =
 		useBrowserShellInteractionPassthrough({ sidebarOpen });
 	const handleSidebarResizingChange = useCallback(
@@ -257,6 +258,7 @@ function V2WorkspaceContent() {
 		onBeforeCloseTab,
 	});
 	useHotkey("QUICK_OPEN", handleQuickOpen);
+	useHotkey("OPEN_HARNESS_PICKER", () => setAddTabMenuOpen(true));
 	useHotkey("RUN_WORKSPACE_COMMAND", () => {
 		void workspaceRun.toggleWorkspaceRun();
 	});
@@ -294,8 +296,14 @@ function V2WorkspaceContent() {
 							registry={paneRegistry}
 							paneActions={defaultPaneActions}
 							contextMenuActions={defaultContextMenuActions}
+							addTabMenuOpen={addTabMenuOpen}
+							onAddTabMenuOpenChange={setAddTabMenuOpen}
 							renderTabIcon={(tab) => (
-								<WorkspaceTabIcon tab={tab} workspaceId={workspaceId} />
+								<WorkspaceTabIcon
+									tab={tab}
+									registry={paneRegistry}
+									workspaceId={workspaceId}
+								/>
 							)}
 							renderTabAccessory={(tab) => (
 								<V2NotificationStatusIndicator
@@ -305,6 +313,7 @@ function V2WorkspaceContent() {
 							renderAddTabMenu={() => (
 								<AddTabMenu
 									agents={agents}
+									onRequestClose={() => setAddTabMenuOpen(false)}
 									onAddAgent={(configId) => {
 										void createAgentTerminal({
 											configId,

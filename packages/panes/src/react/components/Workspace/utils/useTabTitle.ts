@@ -45,7 +45,7 @@ export function useTabTitle<TData>(
 	tabs: Tab<TData>[],
 	registry: PaneRegistry<TData>,
 ): string {
-	const titlePane = pickTabTitlePane(tab);
+	const titlePane = pickTabTitlePane(tab, registry);
 	const reactiveTitle = useReactivePaneTitle(titlePane, registry)?.trim();
 
 	if (tab.titleOverride) return tab.titleOverride;

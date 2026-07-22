@@ -51,7 +51,69 @@ function* allBindings(): Generator<{
 	}
 }
 
+function defaultOwners(
+	platform: "mac" | "windows" | "linux",
+	chord: string,
+): string[] {
+	return Object.entries(HOTKEYS_REGISTRY)
+		.filter(([, definition]) => {
+			const binding = definition.key[platform];
+			return typeof binding === "string"
+				? binding === chord
+				: binding?.chord === chord;
+		})
+		.map(([id]) => id);
+}
+
 describe("HOTKEYS_REGISTRY shape", () => {
+	it("reserves Command/Ctrl+J for the bottom terminal panel", () => {
+		expect(HOTKEYS_REGISTRY.OPEN_TERMINAL_PANEL.key.mac).toMatchObject({
+			mode: "logical",
+			chord: "meta+j",
+		});
+		expect(HOTKEYS_REGISTRY.OPEN_TERMINAL_PANEL.key.windows).toMatchObject({
+			mode: "logical",
+			chord: "ctrl+j",
+		});
+		expect(HOTKEYS_REGISTRY.OPEN_TERMINAL_PANEL.key.linux).toMatchObject({
+			mode: "logical",
+			chord: "ctrl+j",
+		});
+		expect(HOTKEYS_REGISTRY.FOCUS_CHAT_INPUT.key).toEqual({
+			mac: null,
+			windows: null,
+			linux: null,
+		});
+
+		for (const [platform, chord] of [
+			["mac", "meta+j"],
+			["windows", "ctrl+j"],
+			["linux", "ctrl+j"],
+		] as const) {
+			expect(defaultOwners(platform, chord)).toEqual(["OPEN_TERMINAL_PANEL"]);
+		}
+	});
+
+	it("reserves Command/Ctrl+T for the harness picker", () => {
+		expect(HOTKEYS_REGISTRY.OPEN_HARNESS_PICKER.key.mac).toMatchObject({
+			mode: "logical",
+			chord: "meta+t",
+		});
+		expect(HOTKEYS_REGISTRY.NEW_GROUP.key).toEqual({
+			mac: null,
+			windows: null,
+			linux: null,
+		});
+
+		for (const [platform, chord] of [
+			["mac", "meta+t"],
+			["windows", "ctrl+shift+t"],
+			["linux", "ctrl+shift+t"],
+		] as const) {
+			expect(defaultOwners(platform, chord)).toEqual(["OPEN_HARNESS_PICKER"]);
+		}
+	});
+
 	it("authors printable defaults as mode: 'logical'", () => {
 		const offenders: string[] = [];
 		for (const { id, platform, binding } of allBindings()) {

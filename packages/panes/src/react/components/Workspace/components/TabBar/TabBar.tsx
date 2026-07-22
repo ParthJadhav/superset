@@ -33,6 +33,8 @@ interface TabBarProps<TData> {
 	onMovePaneToNewTab: (paneId: string, toIndex: number) => void;
 	renderTabIcon?: (tab: Tab<TData>) => ReactNode;
 	renderAddTabMenu?: () => ReactNode;
+	addTabMenuOpen?: boolean;
+	onAddTabMenuOpenChange?: (open: boolean) => void;
 	renderTabBarTrailing?: () => ReactNode;
 	renderTabAccessory?: (tab: Tab<TData>) => ReactNode;
 }
@@ -42,11 +44,16 @@ type PaneDragItem = { paneId: string };
 
 function AddTabButton<_TData>({
 	renderAddTabMenu,
+	open,
+	onOpenChange,
 }: {
 	renderAddTabMenu?: () => ReactNode;
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 }) {
 	const button = (
 		<Button
+			aria-label="Add tab"
 			className="ml-1.5 size-7 rounded-md border border-border/60 bg-muted/30 px-1 text-muted-foreground shadow-none hover:bg-accent/60 hover:text-foreground"
 			size="icon"
 			type="button"
@@ -58,7 +65,7 @@ function AddTabButton<_TData>({
 
 	if (renderAddTabMenu) {
 		return (
-			<DropdownMenu>
+			<DropdownMenu open={open} onOpenChange={onOpenChange}>
 				<DropdownMenuTrigger asChild>{button}</DropdownMenuTrigger>
 				<DropdownMenuContent align="end" className="w-56">
 					{renderAddTabMenu()}
@@ -83,6 +90,8 @@ export function TabBar<TData>({
 	onMovePaneToNewTab,
 	renderTabIcon,
 	renderAddTabMenu,
+	addTabMenuOpen,
+	onAddTabMenuOpenChange,
 	renderTabBarTrailing,
 	renderTabAccessory,
 }: TabBarProps<TData>) {
@@ -176,7 +185,11 @@ export function TabBar<TData>({
 				className="drag group/root-tabs flex h-10 min-w-0 shrink-0 items-stretch"
 			>
 				<div className="no-drag flex h-full w-10 shrink-0 items-center justify-center">
-					<AddTabButton renderAddTabMenu={renderAddTabMenu} />
+					<AddTabButton
+						renderAddTabMenu={renderAddTabMenu}
+						open={addTabMenuOpen}
+						onOpenChange={onAddTabMenuOpenChange}
+					/>
 				</div>
 				<div className="flex min-w-0 flex-1 items-stretch" />
 				{renderTabBarTrailing && (
@@ -238,7 +251,11 @@ export function TabBar<TData>({
 					)}
 					{!hasHorizontalOverflow && (
 						<div className="flex h-full w-10 shrink-0 items-center justify-center border-b border-border">
-							<AddTabButton renderAddTabMenu={renderAddTabMenu} />
+							<AddTabButton
+								renderAddTabMenu={renderAddTabMenu}
+								open={addTabMenuOpen}
+								onOpenChange={onAddTabMenuOpenChange}
+							/>
 						</div>
 					)}
 					{/* Carries the bar's bottom border across the empty space to the
@@ -248,7 +265,11 @@ export function TabBar<TData>({
 			</OverflowFadeContainer>
 			{hasHorizontalOverflow && (
 				<div className="no-drag flex h-full w-10 shrink-0 items-center justify-center border-b border-border bg-border/30">
-					<AddTabButton renderAddTabMenu={renderAddTabMenu} />
+					<AddTabButton
+						renderAddTabMenu={renderAddTabMenu}
+						open={addTabMenuOpen}
+						onOpenChange={onAddTabMenuOpenChange}
+					/>
 				</div>
 			)}
 			{renderTabBarTrailing && (

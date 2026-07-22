@@ -1,21 +1,20 @@
-import type { Tab } from "@superset/panes";
+import { type PaneRegistry, pickTabTitlePane, type Tab } from "@superset/panes";
 import { renderBrowserTabIcon } from "../../hooks/usePaneRegistry/components/BrowserPane";
 import { TerminalPaneIcon } from "../../hooks/usePaneRegistry/components/TerminalPane/components/TerminalPaneIcon";
 import type { PaneViewerData, TerminalPaneData } from "../../types";
 
 interface WorkspaceTabIconProps {
 	tab: Tab<PaneViewerData>;
+	registry: PaneRegistry<PaneViewerData>;
 	workspaceId: string;
 }
 
-export function WorkspaceTabIcon({ tab, workspaceId }: WorkspaceTabIconProps) {
-	const paneIds = Object.keys(tab.panes);
-	const titlePane =
-		paneIds.length === 1
-			? tab.panes[paneIds[0]]
-			: tab.activePaneId
-				? tab.panes[tab.activePaneId]
-				: undefined;
+export function WorkspaceTabIcon({
+	tab,
+	registry,
+	workspaceId,
+}: WorkspaceTabIconProps) {
+	const titlePane = pickTabTitlePane(tab, registry);
 
 	if (titlePane?.kind === "terminal") {
 		const { terminalId } = titlePane.data as TerminalPaneData;
@@ -24,5 +23,5 @@ export function WorkspaceTabIcon({ tab, workspaceId }: WorkspaceTabIconProps) {
 		);
 	}
 
-	return renderBrowserTabIcon(tab);
+	return renderBrowserTabIcon(tab, titlePane);
 }

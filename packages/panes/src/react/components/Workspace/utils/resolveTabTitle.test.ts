@@ -12,6 +12,11 @@ const registry: PaneRegistry<TestData> = {
 		renderPane: () => null,
 		getTitle: (pane) => pane.data.label ?? "",
 	},
+	auxiliary: {
+		renderPane: () => null,
+		getTitle: (pane) => pane.data.label ?? "",
+		canDriveTabTitle: () => false,
+	},
 	untitled: {
 		renderPane: () => null,
 		// no getTitle — exercises the fallback path
@@ -69,6 +74,15 @@ describe("resolveTabTitle", () => {
 		expect(resolveTabTitle(t, [t], registry)).toBe("from-registry");
 	});
 
+	it("single-pane: an auxiliary pane still names its own standalone tab", () => {
+		const t = tab({
+			id: "t1",
+			activePaneId: "panel",
+			panes: [pane("panel", "auxiliary", "Terminal")],
+		});
+		expect(resolveTabTitle(t, [t], registry)).toBe("Terminal");
+	});
+
 	it("single-pane: falls back to Tab N when registry returns empty", () => {
 		const t = tab({
 			id: "t1",
@@ -85,6 +99,18 @@ describe("resolveTabTitle", () => {
 			panes: [pane("p1", "titled", "first"), pane("p2", "titled", "second")],
 		});
 		expect(resolveTabTitle(t, [t], registry)).toBe("second");
+	});
+
+	it("multi-pane: an active auxiliary pane preserves the primary pane title", () => {
+		const t = tab({
+			id: "t1",
+			activePaneId: "panel",
+			panes: [
+				pane("p1", "titled", "editor.ts"),
+				pane("panel", "auxiliary", "Terminal"),
+			],
+		});
+		expect(resolveTabTitle(t, [t], registry)).toBe("editor.ts");
 	});
 
 	it("multi-pane: falls back to Tab N when active pane has no title", () => {
