@@ -33,6 +33,61 @@ self-referential and would change that hash.
 
 ---
 
+## 2026-07-23 — Production URL defaults for fork release builds
+
+- **Status:** Active fork decision
+- **Implementation commit:**
+  `e9bd6a6fcd3a616cd0839edcefd23abd32dcf4c2`
+- **Parent commit:** `e44a05a0a8e97bb4d3f51b87a01c5e97e8cebc75`
+- **Commit subject:** `fix(desktop): default empty release URLs`
+- **Scope:** Desktop Vite environment injection and fork release builds
+
+### Why this fork differs
+
+GitHub exposes unconfigured repository secrets to Actions as empty strings.
+Fork release builds must remain usable without duplicating the upstream
+production URL secrets because the desktop already defines safe public Superset
+defaults for those endpoints.
+
+### Active fork decisions
+
+- Treat an empty build-time environment value the same as an absent value.
+- Use each explicitly configured production fallback when an empty secret has a
+  fallback.
+- Leave empty optional values undefined so their runtime schemas can apply their
+  own defaults.
+- Cover both required URL fallbacks and optional URL defaults with focused
+  tests.
+
+### Preservation checklist for upstream conflicts
+
+- [ ] Fork desktop releases start when URL secrets are not configured.
+- [ ] Non-empty build-time values still override production defaults.
+- [ ] Empty optional values remain undefined rather than being baked in as
+      invalid empty strings.
+- [ ] Renderer environment validation remains enabled in production.
+
+### Primary implementation areas
+
+- `apps/desktop/vite/helpers.ts`
+- `apps/desktop/vite/helpers.test.ts`
+
+### Verification recorded for the implementation commit
+
+- The focused helper suite passed all four cases, including an explicitly empty
+  GitHub secret and an empty optional secret.
+- The desktop typecheck and root lint passed with zero warnings.
+- A production compile with the API, web, Electric, and relay URL variables
+  explicitly empty completed successfully and baked the expected public
+  defaults into the renderer.
+- The packaged arm64 app passed native-runtime validation and deep code-sign
+  verification.
+- After installing the corrected bundle at `/Applications/Superset.app`, a CDP
+  renderer reload mounted the settings UI with three app-root children and zero
+  page exceptions.
+
+---
+
 ## 2026-07-23 — Sharp-compatible desktop runtime dependency layout
 
 - **Status:** Active fork decision
