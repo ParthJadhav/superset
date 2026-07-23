@@ -115,7 +115,7 @@ jobs:
     needs: release
     # is_newest gate: skip the formula bump when the pointer update was skipped
     # (re-cut of an older tag) so Homebrew never downgrades either.
-    if: startsWith(github.ref, 'refs/tags/cli-v') && needs.release.outputs.is_newest == 'true'
+    if: startsWith(github.ref, 'refs/tags/cli-v') && needs.release.outputs.is_newest == 'true' && vars.HOMEBREW_PUBLISHING_ENABLED == 'true'
     uses: ./.github/workflows/bump-homebrew.yml
     with:
       tag: ${{ github.ref_name }}

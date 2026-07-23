@@ -15,6 +15,9 @@ import {
 const currentYear = new Date().getFullYear();
 const author = pkg.author?.name ?? pkg.author;
 const productName = pkg.productName;
+const [githubOwner = "superset-sh", githubRepo = "superset"] = (
+	process.env.GITHUB_REPOSITORY ?? "superset-sh/superset"
+).split("/");
 const macIconPath = join(pkg.resources, "build/icons/icon.icns");
 const linuxIconPath = join(pkg.resources, "build/icons");
 const winIconPath = join(pkg.resources, "build/icons/icon.ico");
@@ -36,8 +39,8 @@ const config: Configuration = {
 	// Generate latest-mac.yml for auto-update (workflow handles actual upload)
 	publish: {
 		provider: "github",
-		owner: "superset-sh",
-		repo: "superset",
+		owner: githubOwner,
+		repo: githubRepo,
 	},
 
 	// Directories
@@ -111,7 +114,7 @@ const config: Configuration = {
 		target: "default",
 		hardenedRuntime: true,
 		gatekeeperAssess: false,
-		notarize: true,
+		notarize: Boolean(process.env.APPLE_ID),
 		entitlements: join(pkg.resources, "build/entitlements.mac.plist"),
 		entitlementsInherit: join(
 			pkg.resources,

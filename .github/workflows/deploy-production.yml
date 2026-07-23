@@ -11,6 +11,7 @@ env:
 jobs:
   deploy-database:
     name: Deploy Database Migrations
+    if: github.event_name == 'workflow_dispatch' || vars.PRODUCTION_DEPLOYMENTS_ENABLED == 'true'
     runs-on: ubuntu-latest
     environment: production
 
@@ -447,6 +448,7 @@ jobs:
 
   deploy-electric-proxy:
     name: Deploy Electric Proxy to Cloudflare
+    if: github.event_name == 'workflow_dispatch' || vars.PRODUCTION_DEPLOYMENTS_ENABLED == 'true'
     runs-on: ubuntu-latest
     environment: production
 

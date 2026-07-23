@@ -33,6 +33,8 @@ jobs:
     name: Build - macOS (${{ matrix.arch }})
     runs-on: macos-latest
     environment: production
+    env:
+      HAS_MAC_CERTIFICATE: ${{ secrets.MAC_CERTIFICATE != '' }}
 
     strategy:
       fail-fast: false
@@ -109,7 +111,8 @@ jobs:
           TARGET_ARCH: ${{ matrix.arch }}
         run: bun run compile:app
 
-      - name: Build Electron app
+      - name: Build Electron app (signed)
+        if: env.HAS_MAC_CERTIFICATE == 'true'
         working-directory: apps/desktop
         env:
           CSC_LINK: ${{ secrets.MAC_CERTIFICATE }}
@@ -117,6 +120,14 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          TARGET_ARCH: ${{ matrix.arch }}
+        run: bun run package -- --publish never --config ${{ inputs.electron_builder_config }} --${{ matrix.arch }}
+
+      - name: Build Electron app (unsigned)
+        if: env.HAS_MAC_CERTIFICATE != 'true'
+        working-directory: apps/desktop
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
           TARGET_ARCH: ${{ matrix.arch }}
         run: bun run package -- --publish never --config ${{ inputs.electron_builder_config }} --${{ matrix.arch }}
 

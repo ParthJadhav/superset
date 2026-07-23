@@ -120,6 +120,11 @@ jobs:
 
       - name: Test
         env:
+          # Unit tests mock database operations, but @superset/db constructs the
+          # Neon client when imported and therefore still needs a syntactically
+          # valid connection string.
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          DATABASE_URL_UNPOOLED: postgresql://ci:ci@localhost:5432/ci
           RELAY_URL: ${{ secrets.RELAY_URL }}
         run: bun run test
 
