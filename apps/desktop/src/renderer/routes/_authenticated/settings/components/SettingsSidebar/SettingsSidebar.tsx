@@ -37,7 +37,9 @@ export function SettingsSidebar() {
 			</Link>
 
 			{/* Settings title */}
-			<h1 className="text-lg font-semibold px-3 mb-4">Settings</h1>
+			<h1 className="text-lg font-semibold text-sidebar-foreground px-3 mb-4">
+				Settings
+			</h1>
 
 			{/* Search input */}
 			<div className="relative px-3 mb-4">
@@ -47,7 +49,7 @@ export function SettingsSidebar() {
 					placeholder="Search settings..."
 					value={searchQuery}
 					onChange={(e) => setSearchQuery(e.target.value)}
-					className="w-full h-8 pl-8 pr-8 text-sm bg-accent/50 rounded-md border-0 outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+					className="w-full h-8 pl-8 pr-8 text-sm bg-control rounded-md border border-input shadow-xs outline-none focus:border-ring focus:ring-2 focus:ring-ring/50 placeholder:text-muted-foreground"
 				/>
 				{searchQuery && (
 					<button
@@ -60,16 +62,16 @@ export function SettingsSidebar() {
 				)}
 			</div>
 
-			<div className="flex-1 overflow-y-auto min-h-0 border-t border-border pt-4 pb-4 px-3">
+			<div className="flex-1 overflow-y-auto min-h-0 border-t border-sidebar-border pt-4 pb-4 px-3">
 				<GeneralSettings matchCounts={matchCounts} />
 			</div>
 
-			<div className="pt-3 border-t border-border px-3">
+			<div className="pt-3 border-t border-sidebar-border px-3">
 				<a
 					href={COMPANY.DOCS_URL}
 					target="_blank"
 					rel="noopener noreferrer"
-					className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground transition-colors"
+					className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
 				>
 					<HiArrowTopRightOnSquare className="h-4 w-4" />
 					<span>Documentation</span>

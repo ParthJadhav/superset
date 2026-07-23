@@ -4,6 +4,7 @@ import {
 	DEFAULT_THEME_ID,
 	darkTheme,
 	getTerminalColors,
+	normalizeVSCodeTheme,
 	type Theme,
 	type ThemeMetadata,
 } from "shared/themes";
@@ -134,19 +135,23 @@ function syncThemeToLocalStorage(theme: Theme): void {
  * Apply a theme to the UI and terminal
  */
 function applyTheme(theme: Theme): {
+	theme: Theme;
 	terminalTheme: ITheme;
 } {
+	const normalizedTheme = normalizeVSCodeTheme(theme);
+
 	// Apply UI colors to CSS variables
-	applyUIColors(theme.ui);
+	applyUIColors(normalizedTheme.ui);
 
 	// Update dark/light class
-	updateThemeClass(theme.type);
+	updateThemeClass(normalizedTheme.type);
 
-	syncThemeToLocalStorage(theme);
+	syncThemeToLocalStorage(normalizedTheme);
 
 	// Convert to editor-specific formats
 	return {
-		terminalTheme: toXtermTheme(getTerminalColors(theme)),
+		theme: normalizedTheme,
+		terminalTheme: toXtermTheme(getTerminalColors(normalizedTheme)),
 	};
 }
 
@@ -176,11 +181,11 @@ export const useThemeStore = create<ThemeState>()(
 						return;
 					}
 
-					const { terminalTheme } = applyTheme(theme);
+					const { theme: activeTheme, terminalTheme } = applyTheme(theme);
 
 					set({
 						activeThemeId: themeId,
-						activeTheme: theme,
+						activeTheme,
 						terminalTheme,
 					});
 				},
@@ -212,8 +217,8 @@ export const useThemeStore = create<ThemeState>()(
 						);
 						const theme = findTheme(resolvedId, state.customThemes);
 						if (theme) {
-							const { terminalTheme } = applyTheme(theme);
-							set({ ...prefUpdate, activeTheme: theme, terminalTheme });
+							const { theme: activeTheme, terminalTheme } = applyTheme(theme);
+							set({ ...prefUpdate, activeTheme, terminalTheme });
 							return;
 						}
 					}
@@ -268,10 +273,11 @@ export const useThemeStore = create<ThemeState>()(
 						return { added, updated, skipped };
 					}
 
-					const { terminalTheme } = applyTheme(resolvedTheme);
+					const { theme: activeTheme, terminalTheme } =
+						applyTheme(resolvedTheme);
 					set({
 						customThemes,
-						activeTheme: resolvedTheme,
+						activeTheme,
 						terminalTheme,
 					});
 
@@ -316,8 +322,8 @@ export const useThemeStore = create<ThemeState>()(
 						);
 						const theme = findTheme(resolvedId, customThemes);
 						if (theme) {
-							const { terminalTheme } = applyTheme(theme);
-							set({ ...baseUpdate, activeTheme: theme, terminalTheme });
+							const { theme: activeTheme, terminalTheme } = applyTheme(theme);
+							set({ ...baseUpdate, activeTheme, terminalTheme });
 							return;
 						}
 					}
@@ -373,9 +379,9 @@ export const useThemeStore = create<ThemeState>()(
 					const theme = findTheme(resolvedId, state.customThemes);
 
 					if (theme) {
-						const { terminalTheme } = applyTheme(theme);
+						const { theme: activeTheme, terminalTheme } = applyTheme(theme);
 						set({
-							activeTheme: theme,
+							activeTheme,
 							terminalTheme,
 						});
 					} else {

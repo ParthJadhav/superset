@@ -31,6 +31,7 @@ const uiColorsSchema = z
 		destructiveForeground: z.string().optional(),
 		border: z.string().optional(),
 		input: z.string().optional(),
+		controlBackground: z.string().optional(),
 		ring: z.string().optional(),
 		sidebar: z.string().optional(),
 		sidebarForeground: z.string().optional(),

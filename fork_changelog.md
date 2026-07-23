@@ -33,6 +33,77 @@ self-referential and would change that hash.
 
 ---
 
+## 2026-07-23 — Accessible semantic colors for imported VS Code themes
+
+- **Status:** Active fork decision
+- **Implementation commit:**
+  `461c4659f99e031b9589f8a26e00270f95749875`
+- **Parent commit:** `f2b8f7c5d7d764d17f182b76dcd9800f98fcc1c5`
+- **Commit subject:** `fix(desktop): normalize imported theme contrast`
+- **Scope:** Desktop VS Code theme conversion, persisted custom themes, shared
+  controls, and the settings sidebar
+
+### Why this fork differs
+
+VS Code workbench themes can use low-contrast editor chrome for secondary text
+and transparent control borders paired with filled input backgrounds. Mapping
+those values directly onto Superset's broader semantic roles made One Hunter
+sidebar labels unreadable and Catppuccin Latte controls indistinguishable from
+their surrounding surface.
+
+### Active fork decisions
+
+- Keep editor-only chrome colors separate from application helper and navigation
+  text, and enforce a 4.5:1 minimum contrast for semantic text roles adapted
+  from VS Code themes.
+- Ignore effectively transparent VS Code border candidates and derive visible
+  structural borders with a minimum contrast against their rendered surface.
+- Preserve `settings.textInputBackground`, `input.background`, and
+  `dropdown.background` as a dedicated control-surface token used by shared
+  inputs, textareas, selects, toggles, checks, radios, and outline buttons.
+- Normalize already-persisted VS Code themes at runtime so users receive the
+  corrected mapping without reimporting them.
+- Leave native Superset themes outside compatibility normalization while giving
+  built-in themes explicit control-surface values.
+- Use sidebar-specific foreground, selection, hover, border, and focus roles in
+  the settings sidebar without applying additional opacity to section labels.
+
+### Preservation checklist for upstream conflicts
+
+- [ ] One Hunter-style low-contrast editor line-number colors are not reused
+      directly for application helper or sidebar text.
+- [ ] Catppuccin-style filled controls remain visually distinct when their
+      declared VS Code borders are transparent.
+- [ ] Persisted VS Code themes are normalized on activation without requiring a
+      fresh import.
+- [ ] Native Superset themes retain their authored semantic colors.
+- [ ] Shared form controls consume the dedicated control-background token.
+- [ ] Settings sidebar navigation continues to use sidebar semantic roles.
+
+### Primary implementation areas
+
+- `apps/desktop/src/shared/themes/vscode.ts`
+- `apps/desktop/src/shared/themes/vscode-ui-colors.ts`
+- `apps/desktop/src/renderer/stores/theme/`
+- `apps/desktop/src/renderer/routes/_authenticated/settings/components/SettingsSidebar/`
+- `packages/ui/src/components/ui/`
+- `packages/ui/src/globals.css`
+
+### Verification recorded for the implementation commit
+
+- All 17 focused VS Code theme conversion and import tests passed.
+- Desktop TypeScript passed, including generated icons and routes.
+- Root Biome lint checked 5,369 files with zero warnings.
+- The exact One Hunter 1.4.0 and Catppuccin 3.19.0 theme packages passed a
+  converter-wide semantic contrast audit.
+- A live renderer diagnostic confirmed One Hunter sidebar text and Catppuccin
+  Latte control surfaces and borders used the corrected CSS variables.
+- The diagnostic used a synthetic settings surface because the local
+  authenticated settings journey was unavailable while its database endpoint
+  was offline.
+
+---
+
 ## 2026-07-23 — Production URL defaults for fork release builds
 
 - **Status:** Active fork decision

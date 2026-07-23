@@ -32,6 +32,7 @@ export const monokaiTheme: Theme = {
 		destructiveForeground: "#f8f8f2",
 		border: "#49483e",
 		input: "#49483e",
+		controlBackground: "#49483e4d",
 		ring: "#a6e22e",
 		sidebar: "#1e1f1c",
 		sidebarForeground: "#f8f8f2",

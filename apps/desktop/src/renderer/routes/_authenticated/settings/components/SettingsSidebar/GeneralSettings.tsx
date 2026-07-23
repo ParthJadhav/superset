@@ -234,7 +234,7 @@ export function GeneralSettings({ matchCounts }: GeneralSettingsProps) {
 
 				return (
 					<div key={group.label} className={cn(groupIndex > 0 && "mt-4")}>
-						<h2 className="text-[10px] font-medium text-muted-foreground/60 uppercase tracking-[0.1em] px-3 mb-1">
+						<h2 className="text-[10px] font-medium text-muted-foreground uppercase tracking-[0.1em] px-3 mb-1">
 							{group.label}
 						</h2>
 						<nav className="flex flex-col">
@@ -252,8 +252,8 @@ export function GeneralSettings({ matchCounts }: GeneralSettingsProps) {
 										className={cn(
 											"flex items-center gap-3 px-3 py-1.5 text-sm rounded-md transition-colors text-left",
 											isActive
-												? "bg-accent text-accent-foreground"
-												: "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground",
+												? "bg-sidebar-accent text-sidebar-accent-foreground"
+												: "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
 										)}
 									>
 										{section.icon}

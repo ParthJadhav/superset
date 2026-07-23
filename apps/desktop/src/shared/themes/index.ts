@@ -36,6 +36,7 @@ export {
 	convertVSCodeTheme,
 	isVSCodeColorTheme,
 	normalizeThemeId,
+	normalizeVSCodeTheme,
 	parseVSCodeThemeJson,
 	type VSCodeColorTheme,
 	type VSCodeThemeConversionOptions,

@@ -128,6 +128,9 @@ export interface UIColors {
 	// Borders and inputs
 	border: string;
 	input: string;
+	// Form fields and outlined controls may rely on a filled surface instead of
+	// a visible stroke (for example, Catppuccin's VS Code themes).
+	controlBackground?: string;
 	ring: string;
 
 	// Sidebar specific

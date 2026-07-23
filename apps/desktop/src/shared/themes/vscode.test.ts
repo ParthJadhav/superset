@@ -1,7 +1,10 @@
 import { describe, expect, it } from "bun:test";
+import { wcagContrast } from "culori";
+import { darkTheme } from "./built-in";
 import {
 	convertVSCodeTheme,
 	isVSCodeColorTheme,
+	normalizeVSCodeTheme,
 	parseVSCodeThemeJson,
 } from "./vscode";
 
@@ -115,5 +118,92 @@ describe("VS Code theme compatibility", () => {
 		expect(theme.ui.background).not.toContain("url(");
 		expect(theme.ui.primary).not.toBe("not-a-color");
 		expect(theme.editor?.syntax?.comment).not.toBe("var(--unexpected-value)");
+	});
+
+	it("does not promote low-contrast editor chrome to application helper text", () => {
+		const theme = convertVSCodeTheme({
+			name: "One Hunter-like",
+			type: "dark",
+			colors: {
+				"editor.background": "#191d21",
+				"editor.foreground": "#e0e0e0",
+				"editorLineNumber.foreground": "#45505b",
+				"sideBar.background": "#14181b",
+				"sideBar.foreground": "#e0e0e0",
+				"button.background": "#53a1fa",
+				"button.foreground": "#e0e0e0",
+			},
+		});
+
+		expect(
+			wcagContrast(theme.ui.mutedForeground, theme.ui.background),
+		).toBeGreaterThanOrEqual(4.5);
+		expect(
+			wcagContrast(theme.ui.mutedForeground, theme.ui.sidebar),
+		).toBeGreaterThanOrEqual(4.5);
+		expect(
+			wcagContrast(theme.ui.primaryForeground, theme.ui.primary),
+		).toBeGreaterThanOrEqual(4.5);
+	});
+
+	it("preserves filled controls when a VS Code theme uses transparent strokes", () => {
+		const theme = convertVSCodeTheme({
+			name: "Catppuccin-like",
+			type: "light",
+			colors: {
+				"editor.background": "#eff1f5",
+				"editor.foreground": "#4c4f69",
+				"sideBar.background": "#e6e9ef",
+				"panel.border": "#acb0be",
+				"input.background": "#ccd0da",
+				"input.border": "#00000000",
+				"settings.textInputBackground": "#ccd0da",
+				"settings.textInputBorder": "#00000000",
+				"sideBar.border": "#00000000",
+			},
+		});
+
+		expect(theme.ui.controlBackground).toBe("#ccd0da");
+		expect(theme.ui.input).toBe("#acb0be");
+		expect(theme.ui.sidebarBorder).toBe("#acb0be");
+		expect(theme.editor?.colors?.panelInputBackground).toBe("#ccd0da");
+		expect(theme.editor?.colors?.panelInputBorder).toBe("#acb0be");
+	});
+
+	it("upgrades already-persisted VS Code themes from editor control colors", () => {
+		const converted = convertVSCodeTheme({
+			name: "Legacy theme",
+			type: "light",
+			colors: {
+				"editor.background": "#eff1f5",
+				"editor.foreground": "#4c4f69",
+				"sideBar.background": "#e6e9ef",
+				"panel.border": "#acb0be",
+				"input.background": "#ccd0da",
+			},
+		});
+		const { controlBackground: _controlBackground, ...legacyUi } = converted.ui;
+		const legacyTheme = {
+			...converted,
+			ui: {
+				...legacyUi,
+				input: "#00000000",
+				mutedForeground: "#8c8fa1",
+				sidebarBorder: "#00000000",
+			},
+		};
+
+		const normalized = normalizeVSCodeTheme(legacyTheme);
+
+		expect(normalized.ui.controlBackground).toBe("#ccd0da");
+		expect(normalized.ui.input).toBe("#acb0be");
+		expect(normalized.ui.sidebarBorder).toBe("#acb0be");
+		expect(
+			wcagContrast(normalized.ui.mutedForeground, normalized.ui.background),
+		).toBeGreaterThanOrEqual(4.5);
+	});
+
+	it("leaves native Superset themes unchanged", () => {
+		expect(normalizeVSCodeTheme(darkTheme)).toBe(darkTheme);
 	});
 });

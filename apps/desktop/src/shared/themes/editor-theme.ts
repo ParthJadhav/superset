@@ -23,7 +23,7 @@ export function getEditorTheme(theme: Theme): EditorTheme {
 			searchActive: theme.ui.highlightActive,
 			panel: theme.ui.card,
 			panelBorder: theme.ui.border,
-			panelInputBackground: theme.ui.background,
+			panelInputBackground: theme.ui.controlBackground ?? theme.ui.background,
 			panelInputForeground: theme.ui.foreground,
 			panelInputBorder: theme.ui.input,
 			panelButtonBackground: theme.ui.secondary,
