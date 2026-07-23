@@ -123,6 +123,11 @@ export function DashboardSidebarWorkspaceItem({
 				onMouseLeave={handleMouseLeave}
 				className="relative flex w-full justify-center"
 			>
+				{shortcutLabel && (
+					<kbd className="pointer-events-none absolute right-0.5 top-0.5 z-10 flex size-4 items-center justify-center rounded border border-border bg-background font-sans text-[10px] font-medium leading-none tabular-nums text-foreground shadow-sm">
+						{shortcutLabel}
+					</kbd>
+				)}
 				{(accentColor || isActive) && (
 					<div
 						className="absolute inset-y-0 left-0 w-0.5"

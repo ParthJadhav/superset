@@ -111,6 +111,7 @@ export interface WorkspaceProps<TData> {
 	className?: string;
 	renderTabAccessory?: (tab: Tab<TData>) => ReactNode;
 	renderTabIcon?: (tab: Tab<TData>) => ReactNode;
+	renderTabShortcut?: (tab: Tab<TData>, index: number) => ReactNode;
 	renderEmptyState?: () => ReactNode;
 	renderAddTabMenu?: () => ReactNode;
 	addTabMenuOpen?: boolean;

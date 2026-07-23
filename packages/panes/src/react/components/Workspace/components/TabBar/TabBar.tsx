@@ -37,6 +37,7 @@ interface TabBarProps<TData> {
 	onAddTabMenuOpenChange?: (open: boolean) => void;
 	renderTabBarTrailing?: () => ReactNode;
 	renderTabAccessory?: (tab: Tab<TData>) => ReactNode;
+	renderTabShortcut?: (tab: Tab<TData>, index: number) => ReactNode;
 }
 
 type TabDragItem = { tabId: string };
@@ -94,6 +95,7 @@ export function TabBar<TData>({
 	onAddTabMenuOpenChange,
 	renderTabBarTrailing,
 	renderTabAccessory,
+	renderTabShortcut,
 }: TabBarProps<TData>) {
 	const tabsTrackRef = useRef<HTMLDivElement>(null);
 	const [hasHorizontalOverflow, setHasHorizontalOverflow] = useState(false);
@@ -240,6 +242,7 @@ export function TabBar<TData>({
 								onRename={(title) => onRenameTab(tab.id, title)}
 								icon={renderTabIcon?.(tab)}
 								accessory={renderTabAccessory?.(tab)}
+								shortcut={renderTabShortcut?.(tab, i)}
 							/>
 						</div>
 					))}

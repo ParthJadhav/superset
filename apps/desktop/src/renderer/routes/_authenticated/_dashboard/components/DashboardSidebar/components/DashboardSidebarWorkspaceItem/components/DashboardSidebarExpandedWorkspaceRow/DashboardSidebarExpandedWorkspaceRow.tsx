@@ -255,7 +255,11 @@ export const DashboardSidebarExpandedWorkspaceRow = forwardRef<
 						)}
 
 						<div className="col-start-2 row-start-1 grid h-5 shrink-0 items-center justify-items-end [&>*]:col-start-1 [&>*]:row-start-1">
-							{creationStatusText ? (
+							{shortcutLabel && !isPending ? (
+								<kbd className="flex size-5 items-center justify-center rounded border border-border bg-background/80 font-sans text-[10px] font-medium leading-none tabular-nums text-foreground shadow-sm">
+									{shortcutLabel}
+								</kbd>
+							) : creationStatusText ? (
 								<span className="text-[11px] text-muted-foreground">
 									{creationStatusText}
 								</span>
@@ -270,13 +274,8 @@ export const DashboardSidebarExpandedWorkspaceRow = forwardRef<
 									/>
 								)
 							)}
-							{!isPending && (
+							{!isPending && !shortcutLabel && (
 								<div className="hidden items-center justify-end gap-1.5 group-hover:flex">
-									{shortcutLabel && (
-										<span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
-											{shortcutLabel}
-										</span>
-									)}
 									{isMainWorkspace ? (
 										<Tooltip delayDuration={300}>
 											<TooltipTrigger asChild>
