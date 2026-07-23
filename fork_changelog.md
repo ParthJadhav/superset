@@ -33,6 +33,50 @@ self-referential and would change that hash.
 
 ---
 
+## 2026-07-23 — Prompt-first Command-N workflow
+
+- **Status:** Active fork decision
+- **Implementation commit:**
+  `e85921ef69c9eb94c7fd6d47451f91f3034d9408`
+- **Parent commit:** `7160fd0429291913b7fa3be50b1eb86064f051cd`
+- **Commit subject:** `feat(desktop): send prompts without new workspaces`
+- **Scope:** Desktop Command-N composer, Markdown editor keyboard handling, and
+  main-workspace agent launch
+
+### Why this fork differs
+
+Command-N is primarily a prompt launcher, not a worktree-creation command.
+Sending a routine prompt should reuse the selected project's existing main
+workspace. Creating a branch and worktree is an explicit secondary action
+because it carries additional repository and navigation consequences.
+
+### Active fork decisions
+
+- Plain Enter sends the prompt to the selected project's existing main
+  workspace without creating a branch or worktree.
+- The composer arrow button follows the same direct-send path as plain Enter.
+- Command-Enter on macOS and Control-Enter on other platforms sends while
+  creating a new workspace.
+- Shift-Enter remains the multiline newline shortcut.
+- The composer footer labels both actions: `↵ Send` and
+  `⌘↵ New workspace` (or the platform-equivalent modifier).
+- Direct sends preserve the selected agent, model, effort, attachments, linked
+  pull request, and linked issues, then navigate to the launched session.
+
+### Verification recorded for the implementation commit
+
+- All four focused Markdown-editor keyboard tests passed, covering Enter,
+  Shift-Enter, modified Enter, and IME composition.
+- The desktop TypeScript check passed.
+- Root lint passed with zero warnings.
+- The development renderer for this worktree was confirmed at
+  `http://localhost:3005/#/sign-in` on CDP port 9335. Authenticated end-to-end
+  verification was blocked because that exact development instance was signed
+  out; no different app instance was substituted.
+- The implementation passed `git diff --check`.
+
+---
+
 ## 2026-07-23 — Credential-free unit-test environment
 
 - **Status:** Active fork decision
