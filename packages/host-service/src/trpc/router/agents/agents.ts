@@ -20,7 +20,7 @@ import type { HostServiceContext } from "../../../types";
 import { protectedProcedure, router } from "../../index";
 import { resolveAttachmentPath } from "../attachments/storage";
 
-interface ResolvedHostAgentConfig {
+export interface ResolvedHostAgentConfig {
 	id: string;
 	presetId: string;
 	label: string;
@@ -29,6 +29,29 @@ interface ResolvedHostAgentConfig {
 	promptTransport: "argv" | "stdin";
 	promptArgs: string[];
 	env: Record<string, string>;
+}
+
+/**
+ * Build the interactive command that reopens an agent-native conversation.
+ *
+ * Resume syntax is deliberately keyed by preset rather than inferred from the
+ * executable name: users may point a preset at an absolute path or shim, while
+ * custom agents have no reliable session-resume contract.
+ */
+export function buildAgentResumeCommandString(
+	config: ResolvedHostAgentConfig,
+	agentSessionId: string,
+): string | null {
+	const baseArgv = [config.command, ...config.args];
+
+	switch (config.presetId) {
+		case "claude":
+			return buildArgvCommand([...baseArgv, "--resume", agentSessionId]);
+		case "codex":
+			return buildArgvCommand([...baseArgv, "resume", agentSessionId]);
+		default:
+			return null;
+	}
 }
 
 function parseArgv(value: string): string[] {

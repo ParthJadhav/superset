@@ -1,5 +1,8 @@
 import { describe, expect, it } from "bun:test";
-import { buildAgentCommandString } from "./agents";
+import {
+	buildAgentCommandString,
+	buildAgentResumeCommandString,
+} from "./agents";
 
 const argvConfig = {
 	id: "00000000-0000-0000-0000-000000000001",
@@ -88,6 +91,47 @@ describe("buildAgentCommandString", () => {
 		);
 		expect(buildAgentCommandString(stdinConfig, "", [], RANDOM_ID)).toBe(
 			"'amp'",
+		);
+	});
+});
+
+describe("buildAgentResumeCommandString", () => {
+	it("resumes Claude by native session id with the configured arguments", () => {
+		expect(buildAgentResumeCommandString(argvConfig, "claude-session")).toBe(
+			"'claude' '--dangerously-skip-permissions' '--resume' 'claude-session'",
+		);
+	});
+
+	it("resumes Codex by native session id with the configured arguments", () => {
+		expect(
+			buildAgentResumeCommandString(
+				{
+					...argvConfig,
+					presetId: "codex",
+					command: "/opt/bin/codex",
+					args: ["--dangerously-bypass-approvals-and-sandbox"],
+				},
+				"019f-session",
+			),
+		).toBe(
+			"'/opt/bin/codex' '--dangerously-bypass-approvals-and-sandbox' 'resume' '019f-session'",
+		);
+	});
+
+	it("does not guess a resume contract for unsupported agents", () => {
+		expect(
+			buildAgentResumeCommandString(
+				{ ...stdinConfig, presetId: "custom-agent" },
+				"session-id",
+			),
+		).toBeNull();
+	});
+
+	it("shell-quotes the native session id", () => {
+		expect(
+			buildAgentResumeCommandString(argvConfig, "id'; touch /tmp/pwned"),
+		).toBe(
+			"'claude' '--dangerously-skip-permissions' '--resume' 'id'\\''; touch /tmp/pwned'",
 		);
 	});
 });

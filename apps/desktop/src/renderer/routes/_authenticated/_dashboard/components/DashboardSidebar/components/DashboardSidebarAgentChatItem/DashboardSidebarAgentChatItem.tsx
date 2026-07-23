@@ -17,7 +17,9 @@ import {
 import { Pin, PinOff } from "lucide-react";
 import { LuBot, LuSquareTerminal, LuTrash2 } from "react-icons/lu";
 import { usePresetIcon } from "renderer/assets/app-icons/preset-icons";
+import { useWorkspaceHostUrl } from "renderer/hooks/host-service/useWorkspaceHostUrl";
 import { useHotkeyDisplay } from "renderer/hotkeys";
+import { getHostServiceClientByUrl } from "renderer/lib/host-service-client";
 import { navigateToV2Workspace } from "renderer/routes/_authenticated/_dashboard/utils/workspace-navigation";
 import {
 	getStatusTooltip,
@@ -49,6 +51,7 @@ export function DashboardSidebarAgentChatItem({
 		(state) => state.pinnedTerminalIds,
 	);
 	const togglePinned = useAgentChatPinsStore((state) => state.togglePinned);
+	const hostUrl = useWorkspaceHostUrl(chat.workspaceId);
 	const { isPending: isKilling, killAgent } = useDashboardSidebarAgentKill(
 		chat.workspaceId,
 	);
@@ -70,12 +73,30 @@ export function DashboardSidebarAgentChatItem({
 		: chat.workspaceName;
 
 	const handleOpen = () => {
-		void navigateToV2Workspace(chat.workspaceId, navigate, {
-			search: {
-				terminalId: chat.terminalId,
-				focusRequestId: crypto.randomUUID(),
-			},
-		});
+		void (async () => {
+			try {
+				if (hostUrl) {
+					await getHostServiceClientByUrl(
+						hostUrl,
+					).terminalAgents.resumeIfIdle.mutate({
+						workspaceId: chat.workspaceId,
+						terminalId: chat.terminalId,
+					});
+				}
+			} catch (error) {
+				console.warn("[agent-chat] failed to resume session", {
+					terminalId: chat.terminalId,
+					error,
+				});
+			}
+
+			await navigateToV2Workspace(chat.workspaceId, navigate, {
+				search: {
+					terminalId: chat.terminalId,
+					focusRequestId: crypto.randomUUID(),
+				},
+			});
+		})();
 	};
 
 	const handleTogglePinned = () => togglePinned(chat.terminalId);
