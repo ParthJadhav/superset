@@ -33,6 +33,253 @@ self-referential and would change that hash.
 
 ---
 
+## 2026-07-23 — Agent-assisted project logo discovery
+
+- **Status:** Active fork decision
+- **Implementation commit:**
+  `fb8996ef1f95dd269ddd4bb94802ac20cd5e7aed`
+- **Parent commit:** `606b7b170ddf9e6c93a9fd831d7c09f4d67c5f86`
+- **Commit subject:** `feat(desktop): derive project logos with agents`
+- **Scope:** Desktop project settings, host-service agent execution, local
+  project metadata, and packaged native image dependencies
+
+### Why this fork differs
+
+Projects should be able to derive a recognizable icon from assets already in
+their repositories without requiring users to locate, resize, and upload the
+asset manually.
+
+### Active fork decisions
+
+- Let users select a compatible configured agent in Project Settings and ask it
+  to find the repository's primary logo.
+- Keep the agent boundary read-only: the agent returns only a project-relative
+  candidate path and never supplies persisted image bytes.
+- Resolve and validate the real path inside the repository, reject traversal
+  and escaping symlinks, enforce source-size and pixel limits, then normalize
+  supported images to a 128×128 PNG.
+- Store the normalized image as a self-contained data URL on the local-first
+  project row and propagate changes through host project events.
+- Prefer a derived project icon over GitHub-avatar fallbacks everywhere project
+  thumbnails appear, while preserving fallback behavior for mixed-version hosts
+  and projects without derived icons.
+- Allow users to replace or remove the derived logo and remember the selected
+  compatible agent per host.
+- Keep Sharp external to the main bundle and package and validate its
+  architecture-specific runtime dependencies.
+
+### Preservation checklist for upstream conflicts
+
+- [ ] Agent output cannot select a file outside the repository or bypass image
+      decoding and size limits.
+- [ ] Project-logo updates propagate to settings, sidebars, filters, recent
+      projects, and workspace dialogs without hiding cached project rows.
+- [ ] Removing a derived logo restores the existing fallback icon.
+- [ ] The packaged desktop app includes and can load Sharp for its target
+      architecture.
+
+### Primary implementation areas
+
+- `packages/host-service/src/projects/project-logo.ts`
+- `packages/host-service/src/agents/headless-agent.ts`
+- `packages/host-service/src/trpc/router/project/project.ts`
+- `apps/desktop/src/renderer/routes/_authenticated/settings/v2-project/$projectId/components/V2ProjectSettings/components/ProjectLogoField/`
+- `apps/desktop/scripts/copy-native-modules.ts`
+- `apps/desktop/scripts/validate-native-runtime.ts`
+
+### Verification recorded for the implementation commit
+
+- The combined feature suite passed all 74 tests.
+- The host-service suite passed all 917 executed tests.
+- All 35 monorepo typecheck tasks passed and root lint passed with zero
+  warnings.
+- The production desktop build passed native-runtime validation, including
+  packaged arm64 Sharp binaries, and the built app passed deep code-signature
+  verification.
+- Installed-app testing used `/Applications/Superset.app`, its file renderer,
+  CDP port 19377, and real pointer input.
+- Claude found `BloomIconFinal.icon/Assets/Subtract.svg`, the host normalized it
+  to a PNG data URL, all visible Bloom thumbnails updated, and the result
+  persisted across settings navigation and remount.
+- Removing the test logo restored all Bloom thumbnails to the GitHub fallback.
+
+---
+
+## 2026-07-23 — Modifier-visible workspace and tab shortcuts
+
+- **Status:** Active fork decision
+- **Implementation commit:**
+  `2f307f947ccd9f1d616feb62be3d21fb0ec1e0f5`
+- **Parent commit:** `fb8996ef1f95dd269ddd4bb94802ac20cd5e7aed`
+- **Commit subject:** `feat(desktop): show workspace shortcut hints`
+- **Scope:** Desktop workspace navigation, hotkey registry, modifier tracking,
+  and pane tab presentation
+
+### Why this fork differs
+
+Number-based navigation is fast only when users can discover the number assigned
+to each workspace and tab without memorizing hidden ordering rules.
+
+### Active fork decisions
+
+- Show numbered badges for the first nine workspaces while Command is held on
+  macOS, and while Control-Shift is held on other platforms.
+- Show numbered badges for the first nine tabs while Option is held on macOS,
+  and use the platform-equivalent tab modifier elsewhere.
+- Bind Option-1 through Option-9 to direct tab selection on macOS.
+- Remove badges immediately on modifier release, window blur, or document
+  visibility loss so modifier state cannot become stuck.
+- Keep labels stable while the underlying workspace order is unchanged and
+  temporarily replace tab accessories with the shortcut badge for clarity.
+
+### Preservation checklist for upstream conflicts
+
+- [ ] Shortcut labels match the same flattened ordering used by the number
+      hotkeys.
+- [ ] Collapsed projects and sections reveal the selected workspace.
+- [ ] Modifier badges disappear on release, blur, and visibility loss.
+- [ ] Tabs beyond the ninth never receive an ambiguous number badge.
+
+### Primary implementation areas
+
+- `apps/desktop/src/renderer/hooks/useModifierKeys/`
+- `apps/desktop/src/renderer/routes/_authenticated/_dashboard/components/DashboardSidebar/`
+- `apps/desktop/src/renderer/hotkeys/registry.ts`
+- `packages/panes/src/react/components/Workspace/`
+
+### Verification recorded for the implementation commit
+
+- The combined feature suite passed all 74 tests, including the hotkey registry
+  coverage for macOS Option-number tab switching.
+- All 35 monorepo typecheck tasks passed and root lint passed with zero
+  warnings.
+- Installed-app testing on CDP port 19377 showed workspace badges only while
+  Command was held and a tab badge only while Option was held; both badge sets
+  disappeared on modifier release.
+- Before/after screenshots were captured from the installed production build.
+
+---
+
+## 2026-07-23 — Close terminal panes when their shell exits
+
+- **Status:** Active fork decision
+- **Implementation commit:**
+  `66af2cec1f6773c9bb68366a66c8c30f2bb3392d`
+- **Parent commit:** `2f307f947ccd9f1d616feb62be3d21fb0ec1e0f5`
+- **Commit subject:** `fix(desktop): close terminal panes on shell exit`
+- **Scope:** Desktop terminal WebSocket transport, runtime registry, and pane
+  lifecycle
+
+### Why this fork differs
+
+A terminal whose shell has exited is no longer an interactive pane. Leaving the
+dead terminal open forces users to close it manually and creates a misleading
+workspace state.
+
+### Active fork decisions
+
+- Deliver server PTY exit details through the terminal transport after flushing
+  pending output.
+- Scope exit listeners to a terminal pane instance and remove them during
+  teardown so stale runtimes cannot close replacement panes.
+- Close the owning terminal through the normal pane lifecycle when its shell
+  exits, including removing the tab when it contained the final pane.
+
+### Preservation checklist for upstream conflicts
+
+- [ ] Pending terminal output is flushed before exit listeners run.
+- [ ] Only the pane instance attached to the exiting runtime closes.
+- [ ] Listener cleanup prevents late exit events from affecting replacement
+      panes.
+- [ ] Terminal exit uses normal pane-store removal and tab fallback behavior.
+
+### Primary implementation areas
+
+- `apps/desktop/src/renderer/lib/terminal/terminal-ws-transport.ts`
+- `apps/desktop/src/renderer/lib/terminal/terminal-runtime-registry.ts`
+- `apps/desktop/src/renderer/routes/_authenticated/_dashboard/v2-workspace/$workspaceId/hooks/usePaneRegistry/components/TerminalPane/TerminalPane.tsx`
+
+### Verification recorded for the implementation commit
+
+- The combined feature suite passed all 74 tests, including transport delivery,
+  pane-instance scoping, and cleanup coverage.
+- The desktop suite passed 2,281 tests; its only failure was the pre-existing
+  Codex shell-PATH assertion caused by the process environment prepending
+  `/opt/homebrew/sbin:/usr/local/sbin`.
+- All 35 monorepo typecheck tasks passed and root lint passed with zero
+  warnings.
+- In the installed production app, a terminal was opened with real pointer
+  input and `exit` was typed into its xterm input. The xterm count and tab count
+  both changed from one to zero, returning the workspace to its empty state.
+
+---
+
+## 2026-07-23 — VS Code theme compatibility and Open VSX discovery
+
+- **Status:** Active fork decision
+- **Implementation commit:**
+  `0cf245fdefc514aedad99894bcdb1c9d7205e515`
+- **Parent commit:** `66af2cec1f6773c9bb68366a66c8c30f2bb3392d`
+- **Commit subject:** `feat(desktop): support VS Code themes`
+- **Scope:** Desktop theme parsing, persistence, main-process Open VSX access,
+  and Appearance settings
+
+### Why this fork differs
+
+Superset should consume the established VS Code color-theme ecosystem instead
+of requiring users and theme authors to maintain a separate Superset-only
+format.
+
+### Active fork decisions
+
+- Accept VS Code JSON and JSONC themes directly while retaining backward
+  compatibility with existing Superset theme files.
+- Map VS Code workbench, terminal, TextMate, and semantic-token colors onto
+  Superset's UI, editor, diff, and terminal surfaces.
+- Search the vendor-neutral Open VSX registry from Appearance settings and
+  install only declared theme assets from downloaded VSIX archives.
+- Support theme packs, theme `include` files, JSON token colors, and `.tmTheme`
+  property lists.
+- Never install or execute extension code.
+- Enforce trusted Open VSX origins, request timeouts, download and decompression
+  limits, safe archive paths, and sanitized color values.
+- Apply the first imported variant immediately and retain additional variants in
+  the user's custom theme list.
+
+### Preservation checklist for upstream conflicts
+
+- [ ] Legacy Superset themes remain importable.
+- [ ] VS Code JSONC, semantic tokens, TextMate scopes, editor colors, and
+      terminal colors continue to map deterministically.
+- [ ] VSIX extraction reads only declared theme assets and cannot traverse
+      archive or include paths.
+- [ ] Marketplace installs never execute extension code.
+- [ ] Imported theme variants persist and remain selectable in Appearance.
+
+### Primary implementation areas
+
+- `apps/desktop/src/shared/themes/vscode.ts`
+- `apps/desktop/src/shared/themes/import.ts`
+- `apps/desktop/src/lib/trpc/routers/theme-marketplace/`
+- `apps/desktop/src/renderer/routes/_authenticated/settings/appearance/components/AppearanceSettings/components/ThemeSection/`
+
+### Verification recorded for the implementation commit
+
+- The combined feature suite passed all 74 tests, including VS Code conversion,
+  JSONC import, safe VSIX extraction, and theme marketplace coverage.
+- All 35 monorepo typecheck tasks passed and root lint passed with zero
+  warnings.
+- The production desktop build completed and the installed app passed deep
+  code-signature verification.
+- Installed-app testing on CDP port 19377 opened Appearance, searched Open VSX
+  for One Dark Pro, applied the verified result, and observed the active palette
+  change from background/foreground `#151110`/`#eae8e6` to
+  `#282c34`/`#abb2bf`.
+- The app reported four additional variants installed. The prior active Dark
+  theme was restored after verification.
+
+---
+
 ## 2026-07-23 — Persisted agent-session resumption
 
 - **Status:** Active fork decision
