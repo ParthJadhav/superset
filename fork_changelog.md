@@ -33,6 +33,37 @@ self-referential and would change that hash.
 
 ---
 
+## 2026-07-23 — Credential-free macOS release packaging
+
+- **Status:** Active fork decision
+- **Implementation commit:**
+  `0fcb46d1ed0eb80602d6dd7921ce922fe92993e1`
+- **Parent commit:** `1c84b4a502470246938d787555276a96d0be8c15`
+- **Commit subject:** `fix(ci): omit empty macOS signing inputs`
+- **Scope:** Reusable desktop release workflow
+
+### Why this fork differs
+
+Electron Builder interprets an explicitly empty `CSC_LINK` as a local path and
+fails instead of producing an unsigned package. A fork without Apple signing
+secrets must omit signing inputs entirely.
+
+### Active fork decisions
+
+- Select separate signed and unsigned macOS packaging steps based on whether
+  `MAC_CERTIFICATE` is configured.
+- Never expose an empty `CSC_LINK` to Electron Builder.
+- Disable certificate auto-discovery explicitly for unsigned builds.
+
+### Verification recorded for the implementation commit
+
+- Root lint passed with zero warnings.
+- The workflow change passed `git diff --check`.
+- The preceding release run reproduced the failure on both macOS architectures
+  while Linux packaging and artifact upload passed.
+
+---
+
 ## 2026-07-23 — GitHub Releases first distribution
 
 - **Status:** Active fork decision
