@@ -19,8 +19,9 @@ function copyDir({ src, dest }: { src: string; dest: string }): void {
 export function defineEnv(
 	value: string | undefined,
 	fallback?: string,
-): string {
-	return JSON.stringify(value ?? fallback);
+): string | undefined {
+	const normalizedValue = value === "" ? undefined : value;
+	return JSON.stringify(normalizedValue ?? fallback);
 }
 
 const RESOURCES_TO_COPY = [
