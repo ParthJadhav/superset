@@ -33,6 +33,35 @@ self-referential and would change that hash.
 
 ---
 
+## 2026-07-23 — Credential-free unit-test environment
+
+- **Status:** Active fork decision
+- **Implementation commit:**
+  `309aad6e1c7037cf4581b982f4722f86146a835c`
+- **Parent commit:** `e1f940518b55e9850afdc5151d6882a8142a44ab`
+- **Commit subject:** `fix(ci): provide test database placeholders`
+- **Scope:** GitHub Actions unit-test job
+
+### Why this fork differs
+
+The fork does not expose an upstream Neon connection string to pull-request
+checks. The unit tests mock database operations, but importing `@superset/db`
+still constructs a Neon client and requires a syntactically valid URL.
+
+### Active fork decisions
+
+- Give the unit-test job local, non-routable PostgreSQL placeholder URLs.
+- Do not require production or preview database credentials to execute mocked
+  unit tests.
+
+### Verification recorded for the implementation commit
+
+- The affected TRPC router tests passed with the placeholder URLs.
+- Root lint passed with zero warnings.
+- The workflow change passed `git diff --check`.
+
+---
+
 ## 2026-07-23 — Credential-free macOS release packaging
 
 - **Status:** Active fork decision
