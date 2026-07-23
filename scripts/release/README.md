@@ -6,6 +6,10 @@ step). One entry point: **`bun run release`**. Design/rationale lives in
 
 ## Model
 
+- **GitHub Releases are the default distribution channel.** Desktop and CLI
+  artifacts are built in GitHub Actions and attached to releases in the current
+  repository. Production server deploys and Homebrew publishing are optional,
+  independent integrations.
 - **desktop == host-service == cli** at each desktop release — one unified plain
   version, enforced by `bun run check:versions` (CI-gated). Publishing a desktop
   release fires `release-cli-lockstep.yml`, which tags the matching plain
@@ -72,6 +76,24 @@ Once published (non-draft), it becomes `/releases/latest`, which the desktop
 auto-updater reads. Publishing (either way) also triggers
 `release-cli-lockstep.yml`, which tags `cli-v<version>` and ships the matching
 standalone CLI — no manual CLI step.
+
+On forks, updater metadata automatically targets the repository running the
+workflow. Apple credentials are optional: without them, GitHub Releases receive
+unsigned macOS artifacts; with them, the same workflow signs and notarizes the
+artifacts. Unsigned macOS builds may require users to approve the app in
+Gatekeeper.
+
+## Optional external publishing
+
+GitHub Releases require only the built-in `GITHUB_TOKEN`. Other deployment
+targets are opt-in:
+
+- Set `PRODUCTION_DEPLOYMENTS_ENABLED=true` to deploy database, Vercel, and
+  Cloudflare changes automatically after pushes to `main`. A manual
+  `Deploy Production` dispatch always remains available.
+- Set `HOMEBREW_PUBLISHING_ENABLED=true` and configure
+  `HOMEBREW_TAP_TOKEN` to update the external Homebrew tap after a CLI release.
+- Set Apple signing secrets to produce signed and notarized macOS artifacts.
 
 ## When the daemon guard blocks
 
