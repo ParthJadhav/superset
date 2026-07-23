@@ -54,6 +54,7 @@ import { ProjectPickerPill } from "./components/ProjectPickerPill";
 import { UploadingAttachmentPill } from "./components/UploadingAttachmentPill";
 import { useBranchPickerController } from "./hooks/useBranchPickerController";
 import { useLinkedContext } from "./hooks/useLinkedContext";
+import { useSubmitToMainWorkspace } from "./hooks/useSubmitToMainWorkspace";
 import { useSubmitWorkspace } from "./hooks/useSubmitWorkspace";
 import {
 	useFileIdsForHost,
@@ -305,7 +306,18 @@ export function PromptGroup({
 		uploadAttachments,
 		promptContext,
 	);
-	const handleSubmit = useCallback(() => {
+	const selectedHostId = draft.hostId ?? machineId;
+	const sendToMainWorkspace = useSubmitToMainWorkspace({
+		projectId,
+		hostId: selectedHostId,
+		hostUrl: launchHostUrl,
+		selectedAgent,
+		selectedModel: modelSupport ? selectedModel : null,
+		selectedEffort: effortSupport ? selectedEffort : null,
+		uploadAttachments,
+		promptContext,
+	});
+	const handleCreateWorkspace = useCallback(() => {
 		if (needsSetup) {
 			handleGoToSetup();
 			return;
@@ -331,6 +343,32 @@ export function PromptGroup({
 		needsSetup,
 		submitBlocker,
 	]);
+	const handleSend = useCallback(() => {
+		if (needsSetup) {
+			handleGoToSetup();
+			return;
+		}
+		if (submitBlocker) {
+			if ((draft.hostId ?? machineId) === machineId && !activeHostUrl) {
+				showHostServiceUnavailableToast(hostService, {
+					action: "send the prompt",
+				});
+			} else {
+				toast.error(submitBlocker);
+			}
+			return;
+		}
+		void sendToMainWorkspace();
+	}, [
+		activeHostUrl,
+		draft.hostId,
+		handleGoToSetup,
+		hostService,
+		machineId,
+		needsSetup,
+		sendToMainWorkspace,
+		submitBlocker,
+	]);
 
 	useEffect(() => {
 		if (!isNewWorkspaceModalOpen) return;
@@ -338,11 +376,11 @@ export function PromptGroup({
 			if (e.repeat) return;
 			if (!isEnterSubmit(e, { requireMod: true })) return;
 			e.preventDefault();
-			handleSubmit();
+			handleCreateWorkspace();
 		};
 		window.addEventListener("keydown", handler);
 		return () => window.removeEventListener("keydown", handler);
-	}, [isNewWorkspaceModalOpen, handleSubmit]);
+	}, [isNewWorkspaceModalOpen, handleCreateWorkspace]);
 
 	// ── Linked issues / PR ───────────────────────────────────────────
 	const {
@@ -398,7 +436,7 @@ export function PromptGroup({
 
 			{/* Prompt input */}
 			<PromptInput
-				onSubmit={handleSubmit}
+				onSubmit={handleSend}
 				multiple
 				maxFiles={5}
 				maxFileSize={10 * 1024 * 1024}
@@ -459,15 +497,15 @@ export function PromptGroup({
 						))}
 					</div>
 				)}
-				{/* Markdown prompt editor. Submit stays on draft.prompt (now markdown):
-				    the editor swallows Cmd/Ctrl+Enter (no newline) and the window-level
-				    listener does the single submit, so onModEnter is intentionally unset
-				    to avoid a double-fire. resetKey remounts a clean editor on reset. */}
+				{/* Plain Enter sends to the existing main workspace. The editor
+				    swallows Cmd/Ctrl+Enter and lets the window listener run the
+				    create-workspace path once. Shift+Enter remains a newline. */}
 				<MarkdownEditor
 					key={resetKey}
 					content={prompt}
 					onChange={(markdown) => updateDraft({ prompt: markdown })}
 					onPasteFiles={(files) => attachments.add(files)}
+					onEnter={handleSend}
 					autoFocus="start"
 					placeholder="What do you want to do?"
 					className="flex flex-col min-h-[100px] max-h-[200px] px-3 pt-3"
@@ -564,11 +602,12 @@ export function PromptGroup({
 							}
 						/>
 						<PromptInputSubmit
+							aria-label="Send to main workspace"
 							className="size-[22px] rounded-full border border-transparent bg-foreground/10 shadow-none p-[5px] hover:bg-foreground/20"
 							disabled={needsSetup}
 							onClick={(e) => {
 								e.preventDefault();
-								handleSubmit();
+								handleSend();
 							}}
 						>
 							<ArrowUpIcon className="size-3.5 text-muted-foreground" />
@@ -631,9 +670,16 @@ export function PromptGroup({
 							Set up project…
 						</Button>
 					) : (
-						<span className="text-[11px] text-muted-foreground/50">
-							{modKey}↵
-						</span>
+						<div className="flex items-center gap-3 text-[11px] text-muted-foreground/60">
+							<span className="flex items-center gap-1">
+								<kbd className="font-sans">↵</kbd>
+								Send
+							</span>
+							<span className="flex items-center gap-1">
+								<kbd className="font-sans">{modKey}↵</kbd>
+								New workspace
+							</span>
+						</div>
 					)}
 				</div>
 			</div>
