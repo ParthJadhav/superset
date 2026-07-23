@@ -1,7 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
-import { useHostProjects } from "renderer/hooks/host-projects/useHostProjects";
+import {
+	getHostProjectIconUrl,
+	useHostProjects,
+} from "renderer/hooks/host-projects/useHostProjects";
 import { useHostUrl } from "renderer/hooks/host-service/useHostTargetUrl";
 import { getHostServiceClientByUrl } from "renderer/lib/host-service-client";
 import { useWorkspaceHostOptions } from "renderer/routes/_authenticated/components/DashboardNewWorkspaceModal/components/DashboardNewWorkspaceForm/components/DevicePicker/hooks/useWorkspaceHostOptions";
@@ -16,6 +19,7 @@ import { BranchPrefixSection } from "./components/BranchPrefixSection";
 import { DeleteProjectSection } from "./components/DeleteProjectSection";
 import { NameSection } from "./components/NameSection";
 import { ProjectLocationSection } from "./components/ProjectLocationSection";
+import { ProjectLogoField } from "./components/ProjectLogoField";
 import { RepositorySection } from "./components/RepositorySection";
 import { V2ScriptsEditor } from "./components/V2ScriptsEditor";
 import { WorktreeLocationSection } from "./components/WorktreeLocationSection";
@@ -112,9 +116,13 @@ export function V2ProjectSettings({
 		);
 	}
 
-	const iconUrl = project.repoOwner
-		? `https://github.com/${project.repoOwner}.png?size=64`
-		: null;
+	const iconDataUrl = hostProject
+		? hostProject.iconDataUrl
+		: project.iconDataUrl;
+	const iconUrl = getHostProjectIconUrl({
+		iconDataUrl,
+		repoOwner: project.repoOwner,
+	});
 	const canRename = Boolean(
 		targetHostUrl && targetHostId && project.hostIds.includes(targetHostId),
 	);
@@ -158,6 +166,24 @@ export function V2ProjectSettings({
 					</SettingsRow>
 					<SettingsRow label="Repository" htmlFor="project-repo">
 						<RepositorySection repoUrl={project.repoUrl} />
+					</SettingsRow>
+					<SettingsRow
+						label="Project logo"
+						hint="Ask a configured agent to find the primary logo already in this repository."
+					>
+						<ProjectLogoField
+							projectId={projectId}
+							projectName={project.name}
+							hostId={targetHostId ?? "unknown"}
+							hostUrl={targetHostUrl}
+							iconDataUrl={iconDataUrl}
+							fallbackIconUrl={
+								project.repoOwner
+									? `https://github.com/${project.repoOwner}.png?size=64`
+									: null
+							}
+							onChanged={() => refetchHostProject()}
+						/>
 					</SettingsRow>
 					{targetHostUrl && hostProject && (
 						<SettingsRow

@@ -470,6 +470,49 @@ function copyParcelWatcherPlatformPackages(nodeModulesDir: string): void {
 	}
 }
 
+function copySharpDependencies(nodeModulesDir: string): void {
+	const sharpPath = join(nodeModulesDir, "sharp");
+	const sharpPkgJsonPath = join(sharpPath, "package.json");
+	if (!existsSync(sharpPkgJsonPath)) return;
+
+	type SharpPackageJson = {
+		dependencies?: Record<string, string>;
+		optionalDependencies?: Record<string, string>;
+	};
+	const sharpPkg = JSON.parse(
+		readFileSync(sharpPkgJsonPath, "utf8"),
+	) as SharpPackageJson;
+	const dependencies = sharpPkg.dependencies ?? {};
+	const optionalDependencies = sharpPkg.optionalDependencies ?? {};
+
+	console.log("\nPreparing sharp runtime dependencies...");
+	for (const [name, version] of Object.entries(dependencies)) {
+		copyDependencyForPackage(nodeModulesDir, "sharp", name, version, true);
+	}
+
+	const targetSuffix = `${TARGET_PLATFORM === "win32" ? "win32" : TARGET_PLATFORM}-${TARGET_ARCH}`;
+	const targetPackages = Object.entries(optionalDependencies).filter(([name]) =>
+		name.endsWith(targetSuffix),
+	);
+	if (targetPackages.length === 0) {
+		console.error(
+			`  [ERROR] No sharp optional dependency matched ${targetSuffix}`,
+		);
+		process.exit(1);
+	}
+
+	for (const [name, version] of Object.entries(optionalDependencies)) {
+		const isTargetPackage = name.endsWith(targetSuffix);
+		const destination = join(nodeModulesDir, name);
+		if (copyModuleIfSymlink(nodeModulesDir, name, false)) {
+			continue;
+		}
+		if (isTargetPackage) {
+			copyExactModuleVersion(nodeModulesDir, name, version, destination, true);
+		}
+	}
+}
+
 function copyDuckdbPlatformPackages(nodeModulesDir: string): void {
 	const nodeBindingsPath = join(nodeModulesDir, "@duckdb", "node-bindings");
 	const nodeBindingsPkgJsonPath = join(nodeBindingsPath, "package.json");
@@ -531,6 +574,7 @@ function prepareNativeModules() {
 	console.log("\nPreparing ast-grep platform package...");
 	copyAstGrepPlatformPackages(nodeModulesDir);
 	copyParcelWatcherPlatformPackages(nodeModulesDir);
+	copySharpDependencies(nodeModulesDir);
 	copyLibsqlDependencies(nodeModulesDir);
 	copyDuckdbPlatformPackages(nodeModulesDir);
 

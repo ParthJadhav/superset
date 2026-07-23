@@ -2,7 +2,10 @@ import type { WorkspaceState } from "@superset/panes";
 import { useLiveQuery } from "@tanstack/react-db";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useRef } from "react";
-import { useHostProjects } from "renderer/hooks/host-projects/useHostProjects";
+import {
+	getHostProjectIconUrl,
+	useHostProjects,
+} from "renderer/hooks/host-projects/useHostProjects";
 import { deriveTerminalAgentStatus } from "renderer/hooks/host-service/useTerminalAgentStatuses/deriveTerminalAgentStatus";
 import { useRelayUrl } from "renderer/hooks/useRelayUrl";
 import {
@@ -192,9 +195,7 @@ export function useDashboardSidebarData() {
 					name: project.name,
 					githubOwner: project.repoOwner,
 					githubRepoName: project.repoName,
-					iconUrl: project.repoOwner
-						? `https://github.com/${project.repoOwner}.png?size=64`
-						: null,
+					iconUrl: getHostProjectIconUrl(project),
 					createdAt: new Date(project.createdAt),
 					updatedAt: new Date(project.updatedAt),
 					isCollapsed: row.isCollapsed,

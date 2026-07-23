@@ -68,9 +68,13 @@ workspace precedent (`offline-first-workspace-table-reference.md`).
 - **Migrated off Electric `v2Projects`**: dashboard sidebar
   (`useDashboardSidebarData` — placement stays in localStorage
   `v2SidebarProjects`, identity joins in JS), settings list/detail pages,
-  `V2ProjectSettings` (name/repo/thumbnail from host data; icons derive from
-  the GitHub owner avatar; repository field read-only — derived from the git
-  remote), new-workspace modal project picker.
+  `V2ProjectSettings` (name/repo/thumbnail from host data; repository field
+  read-only — derived from the git remote), new-workspace modal project picker.
+- **Project logos** (added 2026-07-23): host rows own a normalized inline PNG.
+  Settings can run a user-selected compatible agent in its curated read-only
+  headless mode to identify an existing repository logo; the host validates
+  containment/decoding before applying it. Derived logos render ahead of the
+  GitHub owner-avatar fallback and travel through `project:changed` snapshots.
 - **Renames commit through the host** everywhere (settings `NameSection`
   seeded from the *targeted host's* `project.get` name with post-commit
   refetch; sidebar inline rename resolves a serving host). Optimistic cloud
@@ -110,5 +114,5 @@ legacy-cloud failure swallowed; zero push/reconciler log lines all session.
 - Freeze audit before cloud tables retire: mobile screens, automations
   router, task dispatch (automations can't target local-only projects yet).
 - Unique index on `projects.repoPath` (needs dedup migration); serving-host
-  `hostId` in settings navigation; custom icon upload (retired with the
-  cloud row — future entity concern).
+  `hostId` in settings navigation; manual custom icon upload remains out of
+  scope (agent-derived repository logos are host-local).

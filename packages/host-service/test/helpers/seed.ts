@@ -28,6 +28,7 @@ export interface SeedProjectOptions {
 	repoUrl?: string;
 	repoProvider?: string;
 	remoteName?: string;
+	iconDataUrl?: string;
 }
 
 export function seedProject(
@@ -45,6 +46,7 @@ export function seedProject(
 			repoUrl: options.repoUrl,
 			repoProvider: options.repoProvider,
 			remoteName: options.remoteName,
+			iconDataUrl: options.iconDataUrl,
 		})
 		.run();
 	return { id };

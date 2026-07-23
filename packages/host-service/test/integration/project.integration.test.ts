@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { randomUUID } from "node:crypto";
+import { chmod, mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import { TRPCClientError } from "@trpc/client";
+import sharp from "sharp";
+import { hostAgentConfigs } from "../../src/db/schema";
 import { createTestHost } from "../helpers/createTestHost";
 import { createGitFixture } from "../helpers/git-fixture";
 import { createProjectScenario } from "../helpers/scenarios";
@@ -58,6 +62,83 @@ describe("project router integration", () => {
 		await expect(
 			scenario.host.trpc.project.get.query({ projectId: "not-a-uuid" }),
 		).rejects.toBeInstanceOf(TRPCClientError);
+	});
+
+	test("derives, persists, lists, and removes a logo with the selected agent", async () => {
+		const host = await createTestHost();
+		const repo = await createGitFixture();
+		dispose = async () => {
+			await host.dispose();
+			repo.dispose();
+		};
+
+		await mkdir(join(repo.repoPath, "assets"));
+		await sharp({
+			create: {
+				width: 256,
+				height: 128,
+				channels: 4,
+				background: { r: 18, g: 78, b: 190, alpha: 1 },
+			},
+		})
+			.png()
+			.toFile(join(repo.repoPath, "assets", "logo.png"));
+
+		const fakeAgentPath = join(repo.repoPath, ".fake-logo-agent");
+		await writeFile(
+			fakeAgentPath,
+			`#!/bin/sh
+printf '%s\\n' '{"path":"assets/logo.png"}'
+`,
+		);
+		await chmod(fakeAgentPath, 0o700);
+
+		const agentId = randomUUID();
+		host.db
+			.insert(hostAgentConfigs)
+			.values({
+				id: agentId,
+				presetId: "claude",
+				label: "Logo Finder",
+				command: fakeAgentPath,
+				argsJson: "[]",
+				promptTransport: "argv",
+				promptArgsJson: "[]",
+				envJson: "{}",
+				displayOrder: 0,
+			})
+			.run();
+		const project = seedProject(host, { repoPath: repo.repoPath });
+
+		const derived = await host.trpc.project.deriveLogo.mutate({
+			projectId: project.id,
+			agent: agentId,
+		});
+		expect(derived).toMatchObject({
+			status: "found",
+			sourcePath: "assets/logo.png",
+		});
+		if (derived.status !== "found") throw new Error("Expected a logo");
+		expect(derived.iconDataUrl).toStartWith("data:image/png;base64,");
+
+		const found = await host.trpc.project.get.query({
+			projectId: project.id,
+		});
+		expect(found?.iconDataUrl).toBe(derived.iconDataUrl);
+		expect(
+			(await host.trpc.project.list.query()).find(
+				(item) => item.id === project.id,
+			)?.iconDataUrl,
+		).toBe(derived.iconDataUrl);
+
+		await host.trpc.project.removeLogo.mutate({ projectId: project.id });
+		expect(
+			(
+				await host.trpc.project.get.query({
+					projectId: project.id,
+				})
+			)?.iconDataUrl,
+		).toBeNull();
 	});
 
 	test("findBackfillConflict always returns conflict: null", async () => {

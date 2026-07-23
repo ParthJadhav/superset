@@ -66,6 +66,7 @@ export const SETTING_ITEM_ID = {
 
 	PROJECT_NAME: "project-name",
 	PROJECT_PATH: "project-path",
+	PROJECT_LOGO: "project-logo",
 	PROJECT_SCRIPTS: "project-scripts",
 	PROJECT_BRANCH_PREFIX: "project-branch-prefix",
 	PROJECT_WORKTREE_LOCATION: "project-worktree-location",
@@ -180,6 +181,7 @@ export const SETTING_ITEM_VARIANT: Record<SettingItemId, SettingVariant> = {
 
 	[SETTING_ITEM_ID.PROJECT_NAME]: "shared",
 	[SETTING_ITEM_ID.PROJECT_PATH]: "shared",
+	[SETTING_ITEM_ID.PROJECT_LOGO]: "v2",
 	[SETTING_ITEM_ID.PROJECT_SCRIPTS]: "shared",
 	[SETTING_ITEM_ID.PROJECT_BRANCH_PREFIX]: "v1",
 	[SETTING_ITEM_ID.PROJECT_WORKTREE_LOCATION]: "shared",
@@ -1127,6 +1129,25 @@ export const SETTINGS_ITEMS: SettingsItem[] = [
 			"git",
 			"repo",
 			"root",
+		],
+	},
+	{
+		id: SETTING_ITEM_ID.PROJECT_LOGO,
+		section: "project",
+		title: "Project Logo",
+		description: "Find and apply a project logo with a configured agent",
+		keywords: [
+			"project",
+			"logo",
+			"icon",
+			"image",
+			"favicon",
+			"agent",
+			"appearance",
+			"brand",
+			"automatic",
+			"derive",
+			"extract",
 		],
 	},
 	{

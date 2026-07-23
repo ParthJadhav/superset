@@ -70,6 +70,15 @@ const externalizedRuntimeModules: ExternalizedRuntimeModule[] = [
 		asarUnpackGlobs: ["**/node_modules/@parcel/watcher*/**/*"],
 	},
 	{
+		specifier: "sharp",
+		materialize: ["sharp", "semver"],
+		packagedCopies: [copyWholeModule("sharp"), copyWholeModule("@img")],
+		asarUnpackGlobs: [
+			"**/node_modules/sharp/**/*",
+			"**/node_modules/@img/**/*",
+		],
+	},
+	{
 		specifier: "libsql",
 		materialize: ["libsql"],
 		packagedCopies: [

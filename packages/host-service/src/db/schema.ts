@@ -80,6 +80,9 @@ export const projects = sqliteTable(
 		// Empty string means "not yet backfilled" — the startup sweep targets
 		// these rows (name from cloud legacy row if reachable, else basename).
 		name: text().notNull().default(""),
+		// Small normalized PNG data URI. Keeping the icon inline makes host
+		// snapshots and relay-backed project lists self-contained.
+		iconDataUrl: text("icon_data_url"),
 		// 0 means "predates local ownership"; write paths always set it.
 		updatedAt: integer("updated_at").notNull().default(0),
 		createdAt: integer("created_at")
