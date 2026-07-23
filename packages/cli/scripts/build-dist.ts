@@ -11,6 +11,9 @@
  *     node-pty/
  *     @parcel/watcher/
  *     @parcel/watcher-<target>/
+ *     sharp/
+ *     @img/sharp-<target>/
+ *     @img/sharp-libvips-<target>/
  *   share/migrations/            — Drizzle migration SQL files
  *
  * Usage:
@@ -60,6 +63,7 @@ const RUNTIME_PACKAGES = [
 	"@duckdb/node-api",
 	"@duckdb/node-bindings",
 	"@xterm/headless",
+	"sharp",
 ] as const;
 
 /**
@@ -75,24 +79,32 @@ const TARGET_NATIVE_PACKAGES: Record<Target, string[]> = {
 		"@parcel/watcher-darwin-arm64",
 		"@anush008/tokenizers-darwin-universal",
 		"@duckdb/node-bindings-darwin-arm64",
+		"@img/sharp-darwin-arm64",
+		"@img/sharp-libvips-darwin-arm64",
 	],
 	"darwin-x64": [
 		"@libsql/darwin-x64",
 		"@parcel/watcher-darwin-x64",
 		"@anush008/tokenizers-darwin-universal",
 		"@duckdb/node-bindings-darwin-x64",
+		"@img/sharp-darwin-x64",
+		"@img/sharp-libvips-darwin-x64",
 	],
 	"linux-x64": [
 		"@libsql/linux-x64-gnu",
 		"@parcel/watcher-linux-x64-glibc",
 		"@anush008/tokenizers-linux-x64-gnu",
 		"@duckdb/node-bindings-linux-x64",
+		"@img/sharp-linux-x64",
+		"@img/sharp-libvips-linux-x64",
 	],
 	"linux-arm64": [
 		"@libsql/linux-arm64-gnu",
 		"@parcel/watcher-linux-arm64-glibc",
 		"@anush008/tokenizers-linux-arm64-gnu",
 		"@duckdb/node-bindings-linux-arm64",
+		"@img/sharp-linux-arm64",
+		"@img/sharp-libvips-linux-arm64",
 	],
 };
 
