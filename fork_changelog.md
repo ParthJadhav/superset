@@ -33,6 +33,58 @@ self-referential and would change that hash.
 
 ---
 
+## 2026-07-23 — Cross-platform Sharp packaging for the standalone CLI
+
+- **Status:** Active fork decision
+- **Implementation commit:**
+  `17d7a7b64647511421f1b5b7159489a3fb8d23d4`
+- **Parent commit:** `5d9e50238687f7ffe5ada07e831a0d36d97a3ef6`
+- **Commit subject:** `fix(cli): package Sharp runtime dependencies`
+- **Scope:** Standalone CLI distribution assembly and native-addon smoke testing
+
+### Why this fork differs
+
+Agent-assisted project logo discovery makes Sharp part of the host-service
+runtime graph. The standalone CLI ships that host service with a private Node
+runtime, so its distribution must include Sharp's JavaScript package and the
+native binding and libvips packages for every supported target.
+
+### Active fork decisions
+
+- Copy `sharp` and its regular runtime dependencies into standalone CLI
+  distributions.
+- Explicitly include the matching `@img/sharp-*` and
+  `@img/sharp-libvips-*` optional packages for darwin-arm64, darwin-x64,
+  linux-x64, and linux-arm64.
+- Probe `require("sharp")` from outside the repository during CLI smoke tests so
+  the distribution cannot pass by resolving a workspace copy.
+- Keep the full host-service boot check after individual native-addon probes.
+
+### Preservation checklist for upstream conflicts
+
+- [ ] Every CLI target maps to its matching Sharp binding and libvips package.
+- [ ] Sharp resolves from the packaged `lib/node_modules` tree.
+- [ ] Standalone host-service startup succeeds without access to repository
+      dependencies.
+
+### Primary implementation areas
+
+- `packages/cli/scripts/build-dist.ts`
+- `packages/cli/scripts/smoke-test.sh`
+
+### Verification recorded for the implementation commit
+
+- GitHub CI reproduced the missing runtime on both linux-x64 and linux-arm64:
+  the distributions built, then their host services failed at startup because
+  Sharp could not load.
+- The updated darwin-arm64 distribution built successfully and its isolated
+  smoke test loaded better-sqlite3, node-pty, Parcel Watcher, libsql, and Sharp.
+- The smoke test also spawned a real PTY and booted the packaged host service to
+  a healthy listening state.
+- CLI TypeScript and root lint passed with zero warnings.
+
+---
+
 ## 2026-07-23 — Agent-assisted project logo discovery
 
 - **Status:** Active fork decision
