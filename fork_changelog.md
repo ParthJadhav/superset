@@ -33,6 +33,78 @@ self-referential and would change that hash.
 
 ---
 
+## 2026-07-23 — Persisted agent-session resumption
+
+- **Status:** Active fork decision
+- **Implementation commit:**
+  `5e2fc0628d7d40eb495ce8e95f3f07fb047ddb9e`
+- **Parent commit:** `c23a8b4bc6cbfd738ab2a1a028784a9f74c9fed2`
+- **Commit subject:** `fix(desktop): resume persisted agent sessions`
+- **Scope:** Desktop agent-chat navigation and host-service terminal-agent
+  lifecycle
+
+### Why this fork differs
+
+Persisted agent conversations should remain usable after the desktop app or its
+host service has stopped. Opening a restored conversation must resume the
+agent-native session by its stored session ID rather than merely reopening its
+terminal at an idle shell prompt.
+
+### Active fork decisions
+
+- Store and use the agent-native session ID associated with each terminal-agent
+  binding.
+- Before navigating from an agent-chat sidebar row, ask the owning host to
+  resume the session when its terminal is idle.
+- Re-adopt or recreate the persisted terminal session before checking its
+  foreground process so resumption works across app and host-service restarts.
+- Resume Claude with `--resume <session-id>` and Codex with
+  `resume <session-id>`, preserving configured executable paths, arguments, and
+  environment overlays.
+- Do not infer resume syntax for unsupported or custom agents.
+- Keep active sessions untouched and coalesce concurrent resume requests so
+  repeated clicks cannot launch duplicate agents.
+- Navigation remains available when resumption is unavailable or fails; the
+  error is logged and the persisted terminal still opens.
+
+### Preservation checklist for upstream conflicts
+
+- [ ] Clicking an idle restored Claude or Codex conversation resumes its stored
+      agent-native session before focusing the terminal.
+- [ ] Clicking a currently running conversation does not launch a duplicate
+      agent process.
+- [ ] Resume commands retain configured agent arguments and safely shell-quote
+      session IDs.
+- [ ] Unsupported agents and missing session IDs fail safely without blocking
+      navigation.
+- [ ] App or host-service restart boundaries retain the same terminal and
+      agent-session identities.
+
+### Primary implementation areas
+
+- `apps/desktop/src/renderer/routes/_authenticated/_dashboard/components/DashboardSidebar/components/DashboardSidebarAgentChatItem/`
+- `packages/host-service/src/trpc/router/agents/agents.ts`
+- `packages/host-service/src/trpc/router/terminal-agents/terminal-agents.ts`
+
+### Verification recorded for the implementation commit
+
+- All 46 focused terminal-agent, command-building, sidebar grouping, and
+  navigation tests passed.
+- Desktop and host-service TypeScript checks passed.
+- Root lint passed with zero warnings.
+- `git diff --check` passed.
+- Exact-worktree end-to-end testing used the development Electron renderer at
+  `http://localhost:3005`, CDP port 9335, and real pointer/keyboard input.
+- A persisted Claude session from a prior app lifecycle changed from no
+  foreground process to a running agent, returned `status: "resumed"`, and
+  rendered its prior conversation instead of an idle shell.
+- Repeating the sidebar click returned `status: "already-running"` and kept the
+  same terminal ID without launching a duplicate process.
+- Before/after screenshots are retained under
+  `test-results/session-resumption/` in the local verification workspace.
+
+---
+
 ## 2026-07-23 — Prompt-first Command-N workflow
 
 - **Status:** Active fork decision
