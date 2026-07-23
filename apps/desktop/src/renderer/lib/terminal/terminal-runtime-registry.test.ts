@@ -58,6 +58,45 @@ afterEach(() => {
 });
 
 describe("terminalRuntimeRegistry eviction cleanup", () => {
+	test("scopes terminal exit listeners to a pane instance", () => {
+		const terminalId = "exit-listener-terminal";
+		const instanceId = "exit-listener-pane";
+		const exits: Array<{ exitCode: number; signal: number }> = [];
+		const unsubscribe = terminalRuntimeRegistry.onExit(
+			terminalId,
+			(exit) => exits.push(exit),
+			instanceId,
+		);
+		const registryInternals = terminalRuntimeRegistry as unknown as {
+			entries: Map<
+				string,
+				{
+					transport: {
+						exitListeners: Set<
+							(exit: { exitCode: number; signal: number }) => void
+						>;
+					};
+				}
+			>;
+		};
+		const entry = registryInternals.entries.get(
+			`${terminalId}\u0000${instanceId}`,
+		);
+
+		try {
+			expect(entry).toBeDefined();
+			for (const listener of entry?.transport.exitListeners ?? []) {
+				listener({ exitCode: 7, signal: 15 });
+			}
+			expect(exits).toEqual([{ exitCode: 7, signal: 15 }]);
+
+			unsubscribe();
+			expect(entry?.transport.exitListeners.size).toBe(0);
+		} finally {
+			terminalRuntimeRegistry.dispose(terminalId);
+		}
+	});
+
 	test("keeps a runtime when dimensions fail to persist", () => {
 		const terminalId = "dimensions-write-failure";
 		const setItem = fakeStorage.storage.setItem.bind(fakeStorage.storage);

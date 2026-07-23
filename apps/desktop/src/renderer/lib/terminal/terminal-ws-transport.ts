@@ -23,6 +23,11 @@ export interface TerminalLogEntry {
 	message: string;
 }
 
+export interface TerminalExit {
+	exitCode: number;
+	signal: number;
+}
+
 // PTY output bytes arrive as binary WebSocket frames and are fed straight
 // into xterm.write(Uint8Array) — no UTF-8 decoding hop, so multi-byte
 // codepoints that straddle a frame boundary stay intact (xterm.js buffers
@@ -41,6 +46,7 @@ export interface TerminalTransport {
 	title: string | null | undefined;
 	stateListeners: Set<() => void>;
 	titleListeners: Set<() => void>;
+	exitListeners: Set<(exit: TerminalExit) => void>;
 	/**
 	 * Transport-level status log (WebSocket close/error/reconnect notices).
 	 * Surfaced to the pane UI instead of being written into the xterm buffer,
@@ -249,6 +255,7 @@ export function createTransport(): TerminalTransport {
 		title: undefined,
 		stateListeners: new Set(),
 		titleListeners: new Set(),
+		exitListeners: new Set(),
 		logs: [],
 		logListeners: new Set(),
 		lastDiagnosis: null,
@@ -574,6 +581,12 @@ function attachSocketListeners(
 			terminal.writeln(
 				`\r\n[terminal] exited with code ${message.exitCode} (signal ${message.signal})`,
 			);
+			for (const listener of transport.exitListeners ?? []) {
+				listener({
+					exitCode: message.exitCode,
+					signal: message.signal,
+				});
+			}
 		}
 	});
 
@@ -717,6 +730,7 @@ export function disposeTransport(transport: TerminalTransport) {
 		transport._titleNotifyTimer = null;
 	}
 	transport.titleListeners.clear();
+	transport.exitListeners?.clear();
 	transport.logs = [];
 	transport.logListeners.clear();
 }
