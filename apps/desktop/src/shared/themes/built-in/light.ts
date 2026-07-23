@@ -31,6 +31,7 @@ export const lightTheme: Theme = {
 		destructiveForeground: "oklch(0.985 0 0)",
 		border: "oklch(0.922 0 0)",
 		input: "oklch(0.922 0 0)",
+		controlBackground: "transparent",
 		ring: "oklch(0.708 0 0)",
 		sidebar: "oklch(0.985 0 0)",
 		sidebarForeground: "oklch(0.145 0 0)",

@@ -47,6 +47,7 @@ export const darkTheme: Theme = {
 		// Borders - subtle warm gray
 		border: "#2a2827",
 		input: "#2a2827",
+		controlBackground: "#2a28274d",
 		ring: "#3a3837",
 
 		// Sidebar - slightly lighter than background

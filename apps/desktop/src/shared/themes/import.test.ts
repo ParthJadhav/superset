@@ -84,6 +84,7 @@ describe("parseThemeConfigFile", () => {
 				type: "light",
 				ui: {
 					background: "#fefefe",
+					controlBackground: "#f5f5f5",
 				},
 				colors: {
 					background: "#1e1e2e",
@@ -95,6 +96,7 @@ describe("parseThemeConfigFile", () => {
 		if (!result.ok) return;
 
 		expect(result.themes[0]?.ui.background).toBe("#fefefe");
+		expect(result.themes[0]?.ui.controlBackground).toBe("#f5f5f5");
 		expect(result.themes[0]?.terminal?.background).toBe("#1e1e2e");
 		expect(result.themes[0]?.terminal?.foreground).toBeDefined();
 	});

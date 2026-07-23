@@ -24,6 +24,7 @@ const UI_COLOR_TO_CSS_VAR: Record<keyof UIColors, string> = {
 	destructiveForeground: "--destructive-foreground",
 	border: "--border",
 	input: "--input",
+	controlBackground: "--control-background",
 	ring: "--ring",
 	sidebar: "--sidebar",
 	sidebarForeground: "--sidebar-foreground",
@@ -54,6 +55,8 @@ export function applyUIColors(colors: UIColors): void {
 		const value = colors[key as keyof UIColors];
 		if (value) {
 			root.style.setProperty(cssVar, value);
+		} else {
+			root.style.removeProperty(cssVar);
 		}
 	}
 }

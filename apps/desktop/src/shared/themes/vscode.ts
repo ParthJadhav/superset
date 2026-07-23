@@ -8,6 +8,9 @@ import {
 	type ThemeSource,
 } from "./types";
 import { withAlpha } from "./utils";
+import { isVisibleThemeColor, normalizeVSCodeTheme } from "./vscode-ui-colors";
+
+export { normalizeVSCodeTheme } from "./vscode-ui-colors";
 
 export interface VSCodeTokenColorRule {
 	scope?: string | string[];
@@ -81,6 +84,17 @@ function getColor(
 	for (const key of keys) {
 		const color = colors[key];
 		if (color !== "default" && isColor(color)) return color;
+	}
+	return undefined;
+}
+
+function getVisibleColor(
+	colors: Record<string, string>,
+	...keys: string[]
+): string | undefined {
+	for (const key of keys) {
+		const color = colors[key];
+		if (color !== "default" && isVisibleThemeColor(color)) return color;
 	}
 	return undefined;
 }
@@ -297,7 +311,7 @@ export function convertVSCodeTheme(
 		getColor(colors, "inputValidation.errorForeground") ??
 		baseTheme.ui.destructiveForeground;
 	const border =
-		getColor(
+		getVisibleColor(
 			colors,
 			"contrastBorder",
 			"panel.border",
@@ -306,12 +320,19 @@ export function convertVSCodeTheme(
 			"widget.border",
 		) ?? baseTheme.ui.border;
 	const input =
+		getVisibleColor(
+			colors,
+			"settings.textInputBorder",
+			"input.border",
+			"panelInput.border",
+		) ?? border;
+	const controlBackground =
 		getColor(
 			colors,
-			"input.border",
-			"dropdown.border",
-			"settings.textInputBorder",
-		) ?? border;
+			"settings.textInputBackground",
+			"input.background",
+			"dropdown.background",
+		) ?? (type === "dark" ? withAlpha(input, 0.3) : "transparent");
 	const ring =
 		getColor(
 			colors,
@@ -355,7 +376,7 @@ export function convertVSCodeTheme(
 			"list.hoverForeground",
 		) ?? accentForeground;
 	const sidebarBorder =
-		getColor(colors, "sideBar.border", "activityBar.border") ?? border;
+		getVisibleColor(colors, "sideBar.border", "activityBar.border") ?? border;
 	const sidebarRing = getColor(colors, "focusBorder") ?? ring;
 	const highlightMatch =
 		getColor(
@@ -432,6 +453,7 @@ export function convertVSCodeTheme(
 			destructiveForeground,
 			border,
 			input,
+			controlBackground,
 			ring,
 			sidebar,
 			sidebarForeground,
@@ -455,7 +477,7 @@ export function convertVSCodeTheme(
 	};
 	const derivedEditor = getEditorTheme(themeBase);
 
-	return {
+	return normalizeVSCodeTheme({
 		...themeBase,
 		editor: {
 			colors: {
@@ -467,7 +489,7 @@ export function convertVSCodeTheme(
 					getColor(colors, "editor.foreground") ??
 					derivedEditor.colors.foreground,
 				border:
-					getColor(colors, "editorGroup.border", "panel.border") ??
+					getVisibleColor(colors, "editorGroup.border", "panel.border") ??
 					derivedEditor.colors.border,
 				cursor:
 					getColor(colors, "editorCursor.foreground") ??
@@ -490,26 +512,31 @@ export function convertVSCodeTheme(
 					getColor(colors, "editorWidget.background", "panel.background") ??
 					derivedEditor.colors.panel,
 				panelBorder:
-					getColor(colors, "editorWidget.border", "panel.border") ??
+					getVisibleColor(colors, "editorWidget.border", "panel.border") ??
 					derivedEditor.colors.panelBorder,
 				panelInputBackground:
-					getColor(colors, "input.background") ??
-					derivedEditor.colors.panelInputBackground,
+					getColor(
+						colors,
+						"settings.textInputBackground",
+						"input.background",
+					) ?? derivedEditor.colors.panelInputBackground,
 				panelInputForeground:
 					getColor(colors, "input.foreground") ??
 					derivedEditor.colors.panelInputForeground,
 				panelInputBorder:
-					getColor(colors, "input.border") ??
-					derivedEditor.colors.panelInputBorder,
+					getVisibleColor(
+						colors,
+						"settings.textInputBorder",
+						"input.border",
+						"panelInput.border",
+					) ?? input,
 				panelButtonBackground:
 					getColor(colors, "button.background") ??
 					derivedEditor.colors.panelButtonBackground,
 				panelButtonForeground:
 					getColor(colors, "button.foreground") ??
 					derivedEditor.colors.panelButtonForeground,
-				panelButtonBorder:
-					getColor(colors, "button.border") ??
-					derivedEditor.colors.panelButtonBorder,
+				panelButtonBorder: getVisibleColor(colors, "button.border") ?? border,
 				addition:
 					getColor(
 						colors,
@@ -618,7 +645,7 @@ export function convertVSCodeTheme(
 				),
 			},
 		},
-	};
+	});
 }
 
 export function parseVSCodeThemeJson(
