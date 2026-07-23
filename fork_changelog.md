@@ -33,6 +33,48 @@ self-referential and would change that hash.
 
 ---
 
+## 2026-07-23 — GitHub Releases first distribution
+
+- **Status:** Active fork decision
+- **Implementation commit:**
+  `a3d98ac121209370627e1249ddf0ae8a41fa0eb7`
+- **Parent commit:** `6269497ad0618fb54707c1da59d3be1ca00bfea9`
+- **Commit subject:** `ci: prioritize GitHub release distribution`
+- **Scope:** Desktop packaging, release workflows, production deployment, and
+  release documentation
+
+### Why this fork differs
+
+This fork can publish artifacts through GitHub but does not have access to the
+upstream production database, Vercel, Cloudflare, Homebrew tap, or Apple signing
+credentials. Those integrations must not prevent GitHub-hosted desktop and CLI
+releases.
+
+### Active fork decisions
+
+- Treat GitHub Releases in the current repository as the primary desktop and
+  CLI distribution channel.
+- Derive desktop updater ownership from `GITHUB_REPOSITORY` instead of hardcoding
+  the upstream repository.
+- Build unsigned macOS release artifacts when Apple credentials are absent, and
+  sign/notarize automatically when credentials are configured.
+- Run production server deploys automatically only when
+  `PRODUCTION_DEPLOYMENTS_ENABLED=true`; preserve manual dispatch as an explicit
+  override.
+- Update the external Homebrew tap only when
+  `HOMEBREW_PUBLISHING_ENABLED=true`.
+
+### Verification recorded for the implementation commit
+
+- Root lint passed with zero warnings.
+- All 35 monorepo typecheck tasks passed.
+- All 15 release-script tests passed.
+- The Electron builder config resolved its GitHub provider to
+  `ParthJadhav/superset` and disabled notarization without Apple credentials.
+- Workflow and documentation changes passed `git diff --check`.
+
+---
+
 ## 2026-07-22 — Opt-in preview deployments
 
 - **Status:** Active fork decision
