@@ -48,6 +48,7 @@ import {
 	FileMentionSuggestion,
 } from "./components/FileMention";
 import { SlashCommand } from "./components/SlashCommand";
+import { shouldSubmitMarkdownEditorOnEnter } from "./utils/shouldSubmitMarkdownEditorOnEnter";
 
 const lowlight = createLowlight(common);
 
@@ -140,6 +141,7 @@ interface MarkdownEditorProps {
 	autoFocus?: boolean | "start" | "end";
 	className?: string;
 	editorClassName?: string;
+	onEnter?: () => void;
 	onModEnter?: () => void;
 	/** If provided, enables @-mention file search for the editor. */
 	searchFiles?: FileMentionSearchFn;
@@ -202,6 +204,7 @@ export function MarkdownEditor({
 	autoFocus = false,
 	className,
 	editorClassName,
+	onEnter,
 	onModEnter,
 	searchFiles,
 	onPasteFiles,
@@ -218,6 +221,8 @@ export function MarkdownEditor({
 	searchFilesRef.current = searchFiles;
 	const onPasteFilesRef = useRef(onPasteFiles);
 	onPasteFilesRef.current = onPasteFiles;
+	const onEnterRef = useRef(onEnter);
+	onEnterRef.current = onEnter;
 	const editorRef = useRef<Editor | null>(null);
 
 	const urlPolicy = useInlineUrlPolicy();
@@ -351,6 +356,11 @@ export function MarkdownEditor({
 			handleKeyDown: (_, event) => {
 				if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
 					onModEnter?.();
+					return true;
+				}
+				const onEnter = onEnterRef.current;
+				if (onEnter && shouldSubmitMarkdownEditorOnEnter(event)) {
+					onEnter();
 					return true;
 				}
 				return false;

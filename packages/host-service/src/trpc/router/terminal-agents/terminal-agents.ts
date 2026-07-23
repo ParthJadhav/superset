@@ -2,11 +2,14 @@ import {
 	type AgentDefinitionId,
 	BUILTIN_AGENT_IDS,
 } from "@superset/shared/agent-catalog";
+import { envOverlayPrefix } from "@superset/shared/agent-prompt-launch";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
 	createTerminalSessionInternal,
 	disposeSessionAndWait,
+	sessionHasRunningProcess,
+	writeInputToSession,
 } from "../../../terminal/terminal";
 import type {
 	TerminalAgentBinding,
@@ -14,6 +17,10 @@ import type {
 } from "../../../terminal-agents";
 import { resolveAgentSessionTitle } from "../../../terminal-agents/session-title";
 import { protectedProcedure, router } from "../../index";
+import {
+	buildAgentResumeCommandString,
+	resolveHostAgentConfig,
+} from "../agents/agents";
 
 type GetOrCreateResult = {
 	binding: TerminalAgentBinding;
@@ -21,6 +28,15 @@ type GetOrCreateResult = {
 };
 
 const inflight = new Map<string, Promise<GetOrCreateResult>>();
+const resumeInflight = new Map<string, Promise<ResumeResult>>();
+
+type ResumeResult =
+	| { status: "resumed" | "already-running"; terminalId: string }
+	| {
+			status: "unavailable";
+			terminalId: string;
+			reason: "missing-session-id" | "unsupported-agent";
+	  };
 
 function inflightKey(
 	workspaceId: string,
@@ -104,6 +120,97 @@ export const terminalAgentsRouter = router({
 				input.terminalId,
 			);
 			return { success: true };
+		}),
+
+	/**
+	 * Reopen an agent-native conversation when its persisted terminal has
+	 * fallen back to an idle shell. Re-adopting first makes this work across a
+	 * host-service/app restart while the pty-daemon still owns the live PTY.
+	 */
+	resumeIfIdle: protectedProcedure
+		.input(
+			z.object({
+				workspaceId: z.string(),
+				terminalId: z.string(),
+			}),
+		)
+		.mutation(async ({ ctx, input }): Promise<ResumeResult> => {
+			const binding = ctx.terminalAgentStore.get(input.terminalId);
+			if (!binding || binding.workspaceId !== input.workspaceId) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Agent session not found",
+				});
+			}
+
+			if (!binding.agentSessionId) {
+				return {
+					status: "unavailable",
+					terminalId: input.terminalId,
+					reason: "missing-session-id",
+				};
+			}
+
+			const config = resolveHostAgentConfig(
+				ctx.db,
+				binding.definitionId ?? binding.agentId,
+			);
+			const resumeCommand = config
+				? buildAgentResumeCommandString(config, binding.agentSessionId)
+				: null;
+			if (!config || !resumeCommand) {
+				return {
+					status: "unavailable",
+					terminalId: input.terminalId,
+					reason: "unsupported-agent",
+				};
+			}
+
+			const pending = resumeInflight.get(input.terminalId);
+			if (pending) return pending;
+
+			const promise = (async (): Promise<ResumeResult> => {
+				const adopted = await createTerminalSessionInternal({
+					terminalId: input.terminalId,
+					workspaceId: input.workspaceId,
+					db: ctx.db,
+					eventBus: ctx.eventBus,
+				});
+				if ("error" in adopted) {
+					throw new TRPCError({
+						code: "INTERNAL_SERVER_ERROR",
+						message: adopted.error,
+					});
+				}
+
+				if (sessionHasRunningProcess(input.terminalId, input.workspaceId)) {
+					return {
+						status: "already-running",
+						terminalId: input.terminalId,
+					};
+				}
+
+				const result = writeInputToSession({
+					terminalId: input.terminalId,
+					workspaceId: input.workspaceId,
+					data: `${envOverlayPrefix(config.env)}${resumeCommand}\r`,
+				});
+				if ("error" in result) {
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: result.error,
+					});
+				}
+
+				return { status: "resumed", terminalId: input.terminalId };
+			})();
+
+			resumeInflight.set(input.terminalId, promise);
+			try {
+				return await promise;
+			} finally {
+				resumeInflight.delete(input.terminalId);
+			}
 		}),
 
 	/**
