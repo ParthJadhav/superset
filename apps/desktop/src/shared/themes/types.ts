@@ -259,6 +259,12 @@ export interface EditorThemeOverrides {
 	syntax?: Partial<EditorSyntaxColors>;
 }
 
+export interface ThemeSource {
+	kind: "vscode" | "superset";
+	extensionId?: string;
+	version?: string;
+}
+
 /**
  * Complete theme definition
  */
@@ -275,6 +281,8 @@ export interface Theme {
 	description?: string;
 	/** Theme type for system preference matching */
 	type: "dark" | "light";
+	/** Original theme format and marketplace provenance, when available */
+	source?: ThemeSource;
 
 	/** UI colors for app chrome */
 	ui: UIColors;

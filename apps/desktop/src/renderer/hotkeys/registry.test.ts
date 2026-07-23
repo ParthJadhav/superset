@@ -171,9 +171,23 @@ describe("HOTKEYS_REGISTRY shape", () => {
 			mode: "logical",
 			chord: "meta+1",
 		});
+		expect(HOTKEYS_REGISTRY.JUMP_TO_TAB_1.key.mac).toMatchObject({
+			mode: "logical",
+			chord: "alt+1",
+		});
 		expect(HOTKEYS_REGISTRY.OPEN_SETTINGS.key.mac).toMatchObject({
 			mode: "logical",
 			chord: "meta+comma",
 		});
+	});
+
+	it("uses Option plus a number for tab switching on macOS", () => {
+		for (let index = 1; index <= 9; index++) {
+			const id = `JUMP_TO_TAB_${index}` as keyof typeof HOTKEYS_REGISTRY;
+			expect(HOTKEYS_REGISTRY[id].key.mac).toMatchObject({
+				mode: "logical",
+				chord: `alt+${index}`,
+			});
+		}
 	});
 });

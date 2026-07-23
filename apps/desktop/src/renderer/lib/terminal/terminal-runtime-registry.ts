@@ -32,6 +32,7 @@ import {
 	sendDispose,
 	sendInput,
 	sendResize,
+	type TerminalExit,
 	type TerminalLogEntry,
 	type TerminalTransport,
 } from "./terminal-ws-transport";
@@ -573,6 +574,20 @@ class TerminalRuntimeRegistryImpl {
 		};
 	}
 
+	onExit(
+		terminalId: string,
+		listener: (exit: TerminalExit) => void,
+		instanceId = terminalId,
+	): () => void {
+		const entry = this.getOrCreateEntry(terminalId, instanceId);
+		// HMR can preserve transports created before exit listeners existed.
+		entry.transport.exitListeners ??= new Set();
+		entry.transport.exitListeners.add(listener);
+		return () => {
+			entry.transport.exitListeners.delete(listener);
+		};
+	}
+
 	onLogsChange(
 		terminalId: string,
 		listener: () => void,
@@ -607,6 +622,7 @@ if (import.meta.hot) {
 export type {
 	ConnectionState,
 	LinkHoverInfo,
+	TerminalExit,
 	TerminalFailureClassification,
 	TerminalLinkHandlers,
 	TerminalLogEntry,

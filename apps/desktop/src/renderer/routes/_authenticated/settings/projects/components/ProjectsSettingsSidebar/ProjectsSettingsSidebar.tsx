@@ -1,6 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { useHostProjects } from "renderer/hooks/host-projects/useHostProjects";
+import {
+	getHostProjectIconUrl,
+	useHostProjects,
+} from "renderer/hooks/host-projects/useHostProjects";
 import { useIsV2CloudEnabled } from "renderer/hooks/useIsV2CloudEnabled";
 import { electronTrpc } from "renderer/lib/electron-trpc";
 import { ProjectThumbnail } from "renderer/routes/_authenticated/components/ProjectThumbnail";
@@ -35,9 +38,7 @@ export function ProjectsSettingsSidebar({
 			hostProjects.map((project) => ({
 				id: project.projectKey,
 				name: project.name,
-				iconUrl: project.repoOwner
-					? `https://github.com/${project.repoOwner}.png?size=64`
-					: null,
+				iconUrl: getHostProjectIconUrl(project),
 			})),
 		[hostProjects],
 	);

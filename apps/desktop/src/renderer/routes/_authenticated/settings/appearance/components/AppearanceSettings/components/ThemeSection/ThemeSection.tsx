@@ -1,4 +1,3 @@
-import { COMPANY } from "@superset/shared/constants";
 import { Button } from "@superset/ui/button";
 import {
 	Select,
@@ -13,9 +12,8 @@ import {
 import { toast } from "@superset/ui/sonner";
 import { type ChangeEvent, useRef, useState } from "react";
 import {
-	HiOutlineArrowDownTray,
-	HiOutlineArrowTopRightOnSquare,
 	HiOutlineArrowUpTray,
+	HiOutlineMagnifyingGlass,
 } from "react-icons/hi2";
 import { ThemeSwatch } from "renderer/components/ThemeSwatch";
 import {
@@ -31,10 +29,10 @@ import {
 	builtInThemes,
 	darkTheme as defaultDarkTheme,
 	lightTheme as defaultLightTheme,
-	getTerminalColors,
 	parseThemeConfigFile,
 	type Theme,
 } from "shared/themes";
+import { ThemeMarketplaceDialog } from "./components/ThemeMarketplaceDialog";
 
 const MAX_THEME_FILE_SIZE = 256 * 1024; // 256 KB
 
@@ -132,9 +130,9 @@ function ThemeRow({
 export function ThemeSection() {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [isImporting, setIsImporting] = useState(false);
+	const [isMarketplaceOpen, setIsMarketplaceOpen] = useState(false);
 	const activeThemeId = useThemeId();
 	const setTheme = useSetTheme();
-	const activeTheme = useThemeStore((state) => state.activeTheme);
 	const customThemes = useThemeStore((state) => state.customThemes);
 	const upsertCustomThemes = useThemeStore((state) => state.upsertCustomThemes);
 	const systemLightThemeId = useSystemLightThemeId();
@@ -203,7 +201,9 @@ export function ThemeSection() {
 		setIsImporting(true);
 		try {
 			const content = await file.text();
-			const parsed = parseThemeConfigFile(content);
+			const parsed = parseThemeConfigFile(content, {
+				fallbackName: file.name.replace(/\.jsonc?$/i, ""),
+			});
 
 			if (!parsed.ok) {
 				toast.error("Failed to import theme file", {
@@ -252,125 +252,81 @@ export function ThemeSection() {
 		}
 	};
 
-	const handleDownloadBaseTheme = () => {
-		const baseTheme = activeTheme ?? builtInThemes[0];
-		if (!baseTheme) return;
-
-		const baseConfig = {
-			id: "my-custom-theme",
-			name: "My Custom Theme",
-			type: baseTheme.type,
-			author: "You",
-			description: "Custom Superset theme",
-			ui: baseTheme.ui,
-			terminal: getTerminalColors(baseTheme),
-		};
-
-		const blob = new Blob([JSON.stringify(baseConfig, null, 2)], {
-			type: "application/json",
-		});
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement("a");
-		link.href = url;
-		link.download = "superset-theme-base.json";
-		link.click();
-		URL.revokeObjectURL(url);
-	};
-
 	return (
-		<div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
-			<ThemeRow
-				label="Theme"
-				hint={
+		<>
+			<div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+				<ThemeRow
+					label="Theme"
+					hint="Pick a theme or follow your system appearance."
+					value={activeThemeId}
+					onValueChange={setTheme}
+					currentTheme={currentTheme}
+					options={allOptions}
+					includeSystem={{
+						darkTheme: systemDarkTheme,
+						lightTheme: systemLightTheme,
+					}}
+				/>
+				{isSystemMode && (
 					<>
-						Pick a theme or follow your system appearance. Browse the{" "}
-						<a
-							href={`${COMPANY.MARKETING_URL}/marketplace/themes`}
-							target="_blank"
-							rel="noopener noreferrer"
-							className="inline-flex items-center gap-0.5 text-primary hover:underline"
-						>
-							marketplace
-							<HiOutlineArrowTopRightOnSquare className="h-3 w-3" />
-						</a>{" "}
-						or{" "}
-						<a
-							href={`${COMPANY.DOCS_URL}/custom-themes`}
-							target="_blank"
-							rel="noopener noreferrer"
-							className="inline-flex items-center gap-0.5 text-primary hover:underline"
-						>
-							docs
-							<HiOutlineArrowTopRightOnSquare className="h-3 w-3" />
-						</a>
-						.
+						<ThemeRow
+							label="Light theme"
+							hint="Used when your system is in light mode."
+							value={systemLightThemeId}
+							onValueChange={(id) => setSystemThemePreference("light", id)}
+							currentTheme={systemLightTheme}
+							options={lightOptions}
+						/>
+						<ThemeRow
+							label="Dark theme"
+							hint="Used when your system is in dark mode."
+							value={systemDarkThemeId}
+							onValueChange={(id) => setSystemThemePreference("dark", id)}
+							currentTheme={systemDarkTheme}
+							options={darkOptions}
+						/>
 					</>
-				}
-				value={activeThemeId}
-				onValueChange={setTheme}
-				currentTheme={currentTheme}
-				options={allOptions}
-				includeSystem={{
-					darkTheme: systemDarkTheme,
-					lightTheme: systemLightTheme,
-				}}
-			/>
-			{isSystemMode && (
-				<>
-					<ThemeRow
-						label="Light theme"
-						hint="Used when your system is in light mode."
-						value={systemLightThemeId}
-						onValueChange={(id) => setSystemThemePreference("light", id)}
-						currentTheme={systemLightTheme}
-						options={lightOptions}
-					/>
-					<ThemeRow
-						label="Dark theme"
-						hint="Used when your system is in dark mode."
-						value={systemDarkThemeId}
-						onValueChange={(id) => setSystemThemePreference("dark", id)}
-						currentTheme={systemDarkTheme}
-						options={darkOptions}
-					/>
-				</>
-			)}
-			<div className="flex items-center justify-between gap-6 p-4">
-				<div className="min-w-0 flex-1">
-					<div className="text-sm font-medium">Custom themes</div>
-					<div className="text-xs text-muted-foreground">
-						Import a theme file or grab a starter to edit.
+				)}
+				<div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+					<div className="min-w-0 flex-1">
+						<div className="text-sm font-medium">VS Code themes</div>
+						<div className="text-xs text-muted-foreground">
+							Search Open VSX or import a VS Code color theme file.
+						</div>
+					</div>
+					<div className="flex shrink-0 items-center gap-2">
+						<input
+							ref={fileInputRef}
+							type="file"
+							accept=".json,.jsonc,application/json"
+							className="hidden"
+							onChange={handleImport}
+						/>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => fileInputRef.current?.click()}
+							disabled={isImporting}
+						>
+							<HiOutlineArrowUpTray className="mr-1.5 h-4 w-4" />
+							{isImporting ? "Importing..." : "Import JSON"}
+						</Button>
+						<Button
+							type="button"
+							size="sm"
+							onClick={() => setIsMarketplaceOpen(true)}
+						>
+							<HiOutlineMagnifyingGlass className="mr-1.5 h-4 w-4" />
+							Browse themes
+						</Button>
 					</div>
 				</div>
-				<div className="flex items-center gap-2 shrink-0">
-					<input
-						ref={fileInputRef}
-						type="file"
-						accept=".json,application/json"
-						className="hidden"
-						onChange={handleImport}
-					/>
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						onClick={handleDownloadBaseTheme}
-					>
-						<HiOutlineArrowDownTray className="mr-1.5 h-4 w-4" />
-						Download starter
-					</Button>
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						onClick={() => fileInputRef.current?.click()}
-						disabled={isImporting}
-					>
-						<HiOutlineArrowUpTray className="mr-1.5 h-4 w-4" />
-						{isImporting ? "Importing..." : "Import"}
-					</Button>
-				</div>
 			</div>
-		</div>
+			<ThemeMarketplaceDialog
+				open={isMarketplaceOpen}
+				onOpenChange={setIsMarketplaceOpen}
+			/>
+		</>
 	);
 }

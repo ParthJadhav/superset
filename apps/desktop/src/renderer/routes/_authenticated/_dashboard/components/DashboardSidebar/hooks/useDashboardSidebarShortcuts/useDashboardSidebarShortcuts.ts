@@ -1,6 +1,7 @@
 import { useMatchRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useMemo, useRef } from "react";
-import { useHotkey } from "renderer/hotkeys";
+import { useModifierKeys } from "renderer/hooks/useModifierKeys";
+import { PLATFORM, useHotkey } from "renderer/hotkeys";
 import { navigateToV2Workspace } from "renderer/routes/_authenticated/_dashboard/utils/workspace-navigation";
 import { useDashboardSidebarState } from "renderer/routes/_authenticated/hooks/useDashboardSidebarState";
 import { useDeletingWorkspaces } from "renderer/routes/_authenticated/providers/DeletingWorkspacesProvider";
@@ -15,6 +16,7 @@ interface WorkspaceLocation {
 }
 
 const MAX_SHORTCUT_COUNT = 9;
+const NO_SHORTCUT_LABELS = new Map<string, string>();
 
 function haveSameIds(left: string[], right: string[]): boolean {
 	return (
@@ -41,7 +43,7 @@ function useStableWorkspaceShortcutLabels(
 		}
 
 		const labels = new Map(
-			workspaceIds.map((workspaceId, index) => [workspaceId, `⌘${index + 1}`]),
+			workspaceIds.map((workspaceId, index) => [workspaceId, `${index + 1}`]),
 		);
 		previousRef.current = { workspaceIds, labels };
 		return labels;
@@ -68,6 +70,11 @@ export function useDashboardSidebarShortcuts(
 	);
 	const workspaceShortcutLabels =
 		useStableWorkspaceShortcutLabels(flattenedWorkspaces);
+	const modifiers = useModifierKeys();
+	const showWorkspaceShortcutLabels =
+		PLATFORM === "mac"
+			? modifiers.meta && !modifiers.alt && !modifiers.ctrl
+			: modifiers.ctrl && modifiers.shift && !modifiers.alt && !modifiers.meta;
 
 	const workspaceLocations = useMemo(() => {
 		const map = new Map<string, WorkspaceLocation>();
@@ -162,5 +169,7 @@ export function useDashboardSidebarShortcuts(
 		navigateToV2Workspace(target.id, navigate);
 	});
 
-	return workspaceShortcutLabels;
+	return showWorkspaceShortcutLabels
+		? workspaceShortcutLabels
+		: NO_SHORTCUT_LABELS;
 }

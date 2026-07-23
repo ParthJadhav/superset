@@ -4,8 +4,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import { useQuickOpenStore } from "renderer/commandPalette/ui/QuickOpen/quickOpenStore";
+import { useModifierKeys } from "renderer/hooks/useModifierKeys";
 import { useV2UserPreferences } from "renderer/hooks/useV2UserPreferences";
-import { useHotkey } from "renderer/hotkeys";
+import { PLATFORM, useHotkey } from "renderer/hotkeys";
 import { electronTrpc } from "renderer/lib/electron-trpc";
 import { RightSidebarToggle } from "renderer/routes/_authenticated/_dashboard/components/TopBar/components/RightSidebarToggle";
 import { WindowControls } from "renderer/routes/_authenticated/_dashboard/components/TopBar/components/WindowControls";
@@ -233,6 +234,11 @@ function V2WorkspaceContent() {
 	const sidebarWidth = v2UserPreferences.rightSidebarWidth ?? 340;
 	const [isSidebarResizing, setIsSidebarResizing] = useState(false);
 	const [addTabMenuOpen, setAddTabMenuOpen] = useState(false);
+	const modifiers = useModifierKeys();
+	const showTabShortcutLabels =
+		PLATFORM === "mac"
+			? modifiers.alt && !modifiers.meta && !modifiers.ctrl
+			: modifiers.alt && modifiers.ctrl && modifiers.shift && !modifiers.meta;
 	const { onSidebarResizeDragging, onWorkspaceInteractionStateChange } =
 		useBrowserShellInteractionPassthrough({ sidebarOpen });
 	const handleSidebarResizingChange = useCallback(
@@ -310,6 +316,9 @@ function V2WorkspaceContent() {
 									sources={getV2NotificationSourcesForTab(tab)}
 								/>
 							)}
+							renderTabShortcut={(_tab, index) =>
+								showTabShortcutLabels && index < 9 ? index + 1 : null
+							}
 							renderAddTabMenu={() => (
 								<AddTabMenu
 									agents={agents}

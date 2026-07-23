@@ -140,6 +140,28 @@ function validateParcelWatcherNotBundled(): void {
 	);
 }
 
+function validateSharpNotBundled(): void {
+	const sourceMapPath = join(projectRoot, "dist", "main", "index.js.map");
+	assertExists(
+		sourceMapPath,
+		"Main bundle sourcemap not found. Run `bun run compile:app` first.",
+	);
+
+	const sourceMap = readFileSync(sourceMapPath, "utf8");
+	if (sourceMap.includes("node_modules/.bun/sharp@")) {
+		fail(
+			[
+				"Detected bundled `sharp` sources in dist/main/index.js.map.",
+				"Sharp's native loader must remain external so Node can resolve its platform package.",
+			].join("\n"),
+		);
+	}
+
+	console.log(
+		"[validate:native-runtime] OK: sharp is externalized from main bundle",
+	);
+}
+
 function validateWorkspacePackagesBundled(): void {
 	const distMainDir = join(projectRoot, "dist", "main");
 	assertExists(
@@ -348,6 +370,7 @@ function validateNativeModulesPrepared(): void {
 
 	const requiredModules = [
 		"@parcel/watcher/package.json",
+		"@img/colour/package.json",
 		"libsql/package.json",
 		"@neon-rs/load/package.json",
 		"detect-libc/package.json",
@@ -425,6 +448,40 @@ function validateNativeModulesPrepared(): void {
 			`[validate:native-runtime] OK: platform ast-grep package present (${astGrepCandidates.join(" | ")})`,
 		);
 	}
+}
+
+function getPlatformSharpPackages(): string[] {
+	const targetArch = process.env.TARGET_ARCH || process.arch;
+	const targetPlatform = process.env.TARGET_PLATFORM || process.platform;
+	const platformName = targetPlatform === "win32" ? "win32" : targetPlatform;
+	const suffix = `${platformName}-${targetArch}`;
+	const packages = [`@img/sharp-${suffix}`];
+	if (targetPlatform !== "win32") {
+		packages.push(`@img/sharp-libvips-${suffix}`);
+	}
+	return packages;
+}
+
+function validateSharpPrepared(): void {
+	const nodeModulesDir = join(projectRoot, "node_modules");
+	const platformPackages = getPlatformSharpPackages();
+	const missingPackages = platformPackages.filter(
+		(packageName) =>
+			!existsSync(join(nodeModulesDir, packageName, "package.json")),
+	);
+	if (missingPackages.length > 0) {
+		fail(
+			[
+				"Missing platform-specific sharp package.",
+				`Missing: ${missingPackages.join(", ")}`,
+				"Run `bun run copy:native-modules` and ensure optional dependencies are materialized.",
+			].join("\n"),
+		);
+	}
+
+	console.log(
+		`[validate:native-runtime] OK: platform sharp packages present (${platformPackages.join(" | ")})`,
+	);
 }
 
 function getPlatformParcelWatcherCandidates(): string[] {
@@ -530,8 +587,10 @@ function main(): void {
 	validateOnlyExpectedExternalRequires();
 	validateLibsqlNotBundled();
 	validateParcelWatcherNotBundled();
+	validateSharpNotBundled();
 	validateNativeModulesPrepared();
 	validateParcelWatcherPrepared();
+	validateSharpPrepared();
 	validateDuckdbPrepared();
 	console.log("[validate:native-runtime] All checks passed");
 }

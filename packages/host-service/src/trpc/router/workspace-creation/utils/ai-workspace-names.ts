@@ -1,25 +1,14 @@
-import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { Agent } from "@mastra/core/agent";
 import { getSmallModel } from "@superset/chat/server/shared";
-import {
-	getBuiltinAgentDefinition,
-	isBuiltinAgentId,
-	isTerminalAgentDefinition,
-} from "@superset/shared/agent-catalog";
-import {
-	buildAgentModelArgs,
-	buildAgentModelEnv,
-} from "@superset/shared/agent-models";
-import {
-	envOverlayPrefix,
-	quoteSingleShell,
-} from "@superset/shared/agent-prompt-launch";
 import { z } from "zod";
+import {
+	resolveHeadlessAgent,
+	runHeadlessAgent,
+} from "../../../../agents/headless-agent";
 import type { HostDb } from "../../../../db";
 import type { HostServiceContext } from "../../../../types";
 import { updateLocalWorkspace } from "../../../../workspaces/local-workspace-store";
-import { resolveHostAgentConfig } from "../../agents/agents";
 import { listBranchNames } from "./list-branch-names";
 import { deduplicateBranchName } from "./sanitize-branch";
 
@@ -118,26 +107,6 @@ const NAMING_SMALL_MODELS: Record<string, string> = {
 	vibe: "devstral-small",
 };
 
-function resolveNonInteractiveCommand(
-	db: HostDb,
-	agent: string,
-): string | null {
-	const presetId = resolveHostAgentConfig(db, agent)?.presetId ?? agent;
-	if (!isBuiltinAgentId(presetId)) return null;
-	const definition = getBuiltinAgentDefinition(presetId);
-	if (!isTerminalAgentDefinition(definition)) return null;
-	const base = definition.nonInteractiveCommand;
-	if (!base) return null;
-
-	const smallModel = NAMING_SMALL_MODELS[presetId];
-	// Model args go right after the binary: trailing flags like gemini's
-	// `-p` consume the next token, so appending would swallow the prompt.
-	const modelArgs = buildAgentModelArgs(presetId, smallModel);
-	const [bin, ...flags] = base.split(" ");
-	const command = [bin, ...modelArgs.map(quoteSingleShell), ...flags].join(" ");
-	return `${envOverlayPrefix(buildAgentModelEnv(presetId, smallModel))}${command}`;
-}
-
 function extractNamesJson(
 	output: string,
 ): { title: string; branchName: string } | null {
@@ -166,70 +135,22 @@ function extractNamesJson(
 }
 
 async function generateNamesViaAgentCli(
-	command: string,
+	db: HostDb,
+	agent: string,
 	prompt: string,
 ): Promise<GeneratedWorkspaceNames | null> {
-	const shell =
-		process.env.SHELL ||
-		(process.platform === "darwin" ? "/bin/zsh" : "/bin/bash");
 	const namingPrompt = `${AGENT_JSON_INSTRUCTIONS}\n\n<user-prompt>\n${prompt}\n</user-prompt>`;
-	// Login shell so the agent binary resolves like it does in the user's
-	// terminal (nvm/bun-global paths a GUI-launched host-service lacks).
-	// cwd is a scratch dir: naming runs before the worktree exists and the
-	// agent must not pick up repo context or act on files.
-	const shellCommand = `${command} ${quoteSingleShell(namingPrompt)}`;
-
-	// This fallback only runs after the small-model path failed, so any
-	// provider keys in our env are absent or invalid — but the CLIs prefer
-	// them over their own stored auth (claude disables its claude.ai login
-	// when ANTHROPIC_API_KEY is set). Strip them so the agent uses the
-	// credentials the user actually signed the CLI in with.
-	const env = { ...process.env };
-	delete env.ANTHROPIC_API_KEY;
-	delete env.OPENAI_API_KEY;
-
-	const output = await new Promise<string | null>((resolve) => {
-		const child = spawn(shell, ["-lc", shellCommand], {
-			cwd: tmpdir(),
-			env,
-			stdio: ["ignore", "pipe", "pipe"],
-		});
-		let stdout = "";
-		let stderr = "";
-		let settled = false;
-		const settle = (value: string | null) => {
-			if (settled) return;
-			settled = true;
-			clearTimeout(timer);
-			resolve(value);
-		};
-		const timer = setTimeout(() => {
-			child.kill("SIGKILL");
-			console.warn(
-				`[generateNamesViaAgentCli] timed out after ${AGENT_GENERATE_TIMEOUT_MS}ms`,
-			);
-			settle(null);
-		}, AGENT_GENERATE_TIMEOUT_MS);
-		child.stdout.on("data", (chunk: Buffer) => {
-			stdout += chunk.toString();
-		});
-		child.stderr.on("data", (chunk: Buffer) => {
-			stderr += chunk.toString();
-		});
-		child.on("error", (error) => {
-			console.warn("[generateNamesViaAgentCli] spawn failed:", error);
-			settle(null);
-		});
-		child.on("close", (code) => {
-			if (code !== 0) {
-				console.warn(
-					`[generateNamesViaAgentCli] exit ${code}; stderr tail: ${stderr.slice(-500)}; stdout tail: ${stdout.slice(-200)}`,
-				);
-			}
-			settle(code === 0 ? stdout : null);
-		});
+	const resolved = resolveHeadlessAgent(db, agent);
+	if (!resolved) return null;
+	const model = NAMING_SMALL_MODELS[resolved.presetId];
+	const { stdout: output } = await runHeadlessAgent({
+		db,
+		agent,
+		prompt: namingPrompt,
+		cwd: tmpdir(),
+		model,
+		timeoutMs: AGENT_GENERATE_TIMEOUT_MS,
 	});
-	if (output === null) return null;
 
 	const names = extractNamesJson(output);
 	if (!names) {
@@ -298,17 +219,18 @@ export async function generateWorkspaceNamesFromPrompt(
 	}
 
 	if (!agentContext) return null;
-	const command = resolveNonInteractiveCommand(
-		agentContext.db,
-		agentContext.agent,
-	);
-	if (!command) return null;
+	const resolved = resolveHeadlessAgent(agentContext.db, agentContext.agent);
+	if (!resolved) return null;
 
 	console.warn(
 		`[generateWorkspaceNamesFromPrompt] small model unavailable; falling back to agent CLI (${agentContext.agent})`,
 	);
 	try {
-		const names = await generateNamesViaAgentCli(command, cleaned);
+		const names = await generateNamesViaAgentCli(
+			agentContext.db,
+			agentContext.agent,
+			cleaned,
+		);
 		if (names) {
 			console.log(
 				`[generateWorkspaceNamesFromPrompt] named via agent CLI (${agentContext.agent})`,

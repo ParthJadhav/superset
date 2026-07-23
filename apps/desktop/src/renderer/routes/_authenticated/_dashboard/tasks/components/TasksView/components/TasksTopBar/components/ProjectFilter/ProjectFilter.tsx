@@ -10,7 +10,10 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@superset/ui/popover";
 import { useMemo, useState } from "react";
 import { HiCheck, HiChevronDown, HiOutlineFolder } from "react-icons/hi2";
-import { useHostProjects } from "renderer/hooks/host-projects/useHostProjects";
+import {
+	getHostProjectIconUrl,
+	useHostProjects,
+} from "renderer/hooks/host-projects/useHostProjects";
 import { ProjectThumbnail } from "renderer/routes/_authenticated/components/ProjectThumbnail";
 
 interface ProjectFilterProps {
@@ -29,9 +32,7 @@ export function ProjectFilter({ value, onChange }: ProjectFilterProps) {
 			hostProjects.map((project) => ({
 				id: project.projectKey,
 				name: project.name,
-				iconUrl: project.repoOwner
-					? `https://github.com/${project.repoOwner}.png?size=64`
-					: null,
+				iconUrl: getHostProjectIconUrl(project),
 			})),
 		[hostProjects],
 	);

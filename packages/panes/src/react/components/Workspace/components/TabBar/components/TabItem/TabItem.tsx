@@ -33,6 +33,7 @@ interface TabItemProps<TData> {
 	onRename: (title: string | undefined) => void;
 	icon?: ReactNode;
 	accessory?: ReactNode;
+	shortcut?: ReactNode;
 }
 
 export function TabItem<TData>({
@@ -48,6 +49,7 @@ export function TabItem<TData>({
 	onRename,
 	icon,
 	accessory,
+	shortcut,
 }: TabItemProps<TData>) {
 	const [isEditing, setIsEditing] = useState(false);
 	const [editValue, setEditValue] = useState("");
@@ -174,30 +176,36 @@ export function TabItem<TData>({
 								</TooltipContent>
 							</Tooltip>
 							<div className="relative flex h-full w-7 shrink-0 items-center justify-center">
-								{accessory && (
+								{shortcut ? (
+									<kbd className="pointer-events-none flex size-5 items-center justify-center rounded border border-border bg-background/80 font-sans text-[10px] font-medium leading-none tabular-nums text-foreground shadow-sm">
+										{shortcut}
+									</kbd>
+								) : accessory ? (
 									<span className="pointer-events-none absolute inset-0 flex items-center justify-center leading-none opacity-100 transition-opacity group-hover:opacity-0 group-focus-within:opacity-0">
 										{accessory}
 									</span>
+								) : null}
+								{!shortcut && (
+									<Button
+										aria-label="Close tab"
+										className={cn(
+											"pointer-events-none size-5 cursor-pointer text-current opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100",
+											isActive ? "hover:bg-muted" : "hover:bg-foreground/10",
+										)}
+										onClick={(event) => {
+											event.stopPropagation();
+											onClose();
+										}}
+										onMouseDown={(event) => {
+											event.stopPropagation();
+										}}
+										size="icon"
+										type="button"
+										variant="ghost"
+									>
+										<XIcon className="size-3.5" />
+									</Button>
 								)}
-								<Button
-									aria-label="Close tab"
-									className={cn(
-										"pointer-events-none size-5 cursor-pointer text-current opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100",
-										isActive ? "hover:bg-muted" : "hover:bg-foreground/10",
-									)}
-									onClick={(event) => {
-										event.stopPropagation();
-										onClose();
-									}}
-									onMouseDown={(event) => {
-										event.stopPropagation();
-									}}
-									size="icon"
-									type="button"
-									variant="ghost"
-								>
-									<XIcon className="size-3.5" />
-								</Button>
 							</div>
 						</>
 					)}

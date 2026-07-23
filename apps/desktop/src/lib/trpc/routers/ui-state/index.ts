@@ -218,6 +218,12 @@ const editorThemeSchema = z.object({
 	syntax: z.record(z.string(), z.string()).optional(),
 });
 
+const themeSourceSchema = z.object({
+	kind: z.enum(["vscode", "superset"]),
+	extensionId: z.string().optional(),
+	version: z.string().optional(),
+});
+
 /**
  * Zod schema for Theme
  */
@@ -228,6 +234,7 @@ const themeSchema = z.object({
 	version: z.string().optional(),
 	description: z.string().optional(),
 	type: z.enum(["dark", "light"]),
+	source: themeSourceSchema.optional(),
 	ui: uiColorsSchema,
 	terminal: terminalColorsSchema,
 	editor: editorThemeSchema.optional(),

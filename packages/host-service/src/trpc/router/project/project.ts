@@ -7,12 +7,17 @@ import { BRANCH_PREFIX_MODES } from "@superset/shared/workspace-launch";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { HeadlessAgentError } from "../../../agents/headless-agent";
 import { projects, workspaces } from "../../../db/schema";
 import {
 	emitProjectChanged,
 	toProjectSnapshot,
 	updateLocalProject,
 } from "../../../projects/local-project-store";
+import {
+	deriveProjectLogo,
+	ProjectLogoError,
+} from "../../../projects/project-logo";
 import { createUserSimpleGit } from "../../../runtime/git/simple-git";
 import { deleteLocalWorkspace } from "../../../workspaces/local-workspace-store";
 import { protectedProcedure, router } from "../../index";
@@ -51,6 +56,7 @@ export const projectRouter = router({
 				repoName: row.repoName,
 				repoUrl: row.repoUrl,
 				worktreeBaseDir: row.worktreeBaseDir,
+				iconDataUrl: row.iconDataUrl,
 				createdAt: row.createdAt,
 				updatedAt: row.updatedAt || row.createdAt,
 			}));
@@ -99,7 +105,87 @@ export const projectRouter = router({
 				worktreeBaseDir: row.worktreeBaseDir,
 				branchPrefixMode: row.branchPrefixMode,
 				branchPrefixCustom: row.branchPrefixCustom,
+				iconDataUrl: row.iconDataUrl,
 			};
+		}),
+
+	deriveLogo: protectedProcedure
+		.input(
+			z.object({
+				projectId: z.string().uuid(),
+				agent: z.string().min(1),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			const project = ctx.db
+				.select()
+				.from(projects)
+				.where(eq(projects.id, input.projectId))
+				.get();
+			if (!project) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Project is not set up on this host",
+				});
+			}
+
+			try {
+				const result = await deriveProjectLogo({
+					db: ctx.db,
+					agent: input.agent,
+					repoPath: project.repoPath,
+				});
+				if (result.status === "no_match") return result;
+
+				const updated = updateLocalProject(
+					{ db: ctx.db, eventBus: ctx.eventBus },
+					project.id,
+					{ iconDataUrl: result.iconDataUrl },
+				);
+				if (!updated) {
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "Project was removed before its logo could be applied",
+					});
+				}
+				return result;
+			} catch (error) {
+				if (error instanceof TRPCError) throw error;
+				if (error instanceof HeadlessAgentError) {
+					throw new TRPCError({
+						code: error.code === "timed_out" ? "TIMEOUT" : "BAD_REQUEST",
+						message: error.message,
+					});
+				}
+				if (error instanceof ProjectLogoError) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: error.message,
+					});
+				}
+				console.error("[project.deriveLogo] unexpected failure:", error);
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Failed to derive a project logo",
+				});
+			}
+		}),
+
+	removeLogo: protectedProcedure
+		.input(z.object({ projectId: z.string().uuid() }))
+		.mutation(({ ctx, input }) => {
+			const updated = updateLocalProject(
+				{ db: ctx.db, eventBus: ctx.eventBus },
+				input.projectId,
+				{ iconDataUrl: null },
+			);
+			if (!updated) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Project is not set up on this host",
+				});
+			}
+			return { success: true as const };
 		}),
 
 	setWorktreeBaseDir: protectedProcedure

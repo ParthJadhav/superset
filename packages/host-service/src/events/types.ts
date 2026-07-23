@@ -93,6 +93,7 @@ export interface ProjectSnapshot {
 	repoName: string | null;
 	repoUrl: string | null;
 	worktreeBaseDir: string | null;
+	iconDataUrl: string | null;
 	createdAt: number;
 	updatedAt: number;
 }

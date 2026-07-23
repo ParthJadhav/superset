@@ -71,6 +71,8 @@ export function TerminalPane({
 	const paneData = ctx.pane.data as TerminalPaneData;
 	const { terminalId } = paneData;
 	const terminalInstanceId = ctx.pane.id;
+	const ctxRef = useRef(ctx);
+	ctxRef.current = ctx;
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const [isSearchOpen, setIsSearchOpen] = useState(false);
 	// Open/closed is tracked per terminalId in a shared store so the header
@@ -163,6 +165,20 @@ export function TerminalPane({
 			terminalRuntimeRegistry.detach(terminalId, terminalInstanceId);
 		};
 	}, [terminalId, terminalInstanceId]);
+
+	// A PTY exit is terminal lifecycle, not a recoverable connection failure.
+	// Close through the pane action so the normal guard and cleanup hooks run.
+	useEffect(
+		() =>
+			terminalRuntimeRegistry.onExit(
+				terminalId,
+				() => {
+					void ctxRef.current.actions.close();
+				},
+				terminalInstanceId,
+			),
+		[terminalId, terminalInstanceId],
+	);
 
 	useEffect(() => {
 		if (!ctx.isActive) return;

@@ -565,7 +565,7 @@ export const HOTKEYS_REGISTRY = {
 	},
 	JUMP_TO_TAB_1: {
 		key: {
-			mac: L("meta+alt+1"),
+			mac: L("alt+1"),
 			windows: L("ctrl+shift+alt+1"),
 			linux: L("ctrl+shift+alt+1"),
 		},
@@ -574,7 +574,7 @@ export const HOTKEYS_REGISTRY = {
 	},
 	JUMP_TO_TAB_2: {
 		key: {
-			mac: L("meta+alt+2"),
+			mac: L("alt+2"),
 			windows: L("ctrl+shift+alt+2"),
 			linux: L("ctrl+shift+alt+2"),
 		},
@@ -583,7 +583,7 @@ export const HOTKEYS_REGISTRY = {
 	},
 	JUMP_TO_TAB_3: {
 		key: {
-			mac: L("meta+alt+3"),
+			mac: L("alt+3"),
 			windows: L("ctrl+shift+alt+3"),
 			linux: L("ctrl+shift+alt+3"),
 		},
@@ -592,7 +592,7 @@ export const HOTKEYS_REGISTRY = {
 	},
 	JUMP_TO_TAB_4: {
 		key: {
-			mac: L("meta+alt+4"),
+			mac: L("alt+4"),
 			windows: L("ctrl+shift+alt+4"),
 			linux: L("ctrl+shift+alt+4"),
 		},
@@ -601,7 +601,7 @@ export const HOTKEYS_REGISTRY = {
 	},
 	JUMP_TO_TAB_5: {
 		key: {
-			mac: L("meta+alt+5"),
+			mac: L("alt+5"),
 			windows: L("ctrl+shift+alt+5"),
 			linux: L("ctrl+shift+alt+5"),
 		},
@@ -610,7 +610,7 @@ export const HOTKEYS_REGISTRY = {
 	},
 	JUMP_TO_TAB_6: {
 		key: {
-			mac: L("meta+alt+6"),
+			mac: L("alt+6"),
 			windows: L("ctrl+shift+alt+6"),
 			linux: L("ctrl+shift+alt+6"),
 		},
@@ -619,7 +619,7 @@ export const HOTKEYS_REGISTRY = {
 	},
 	JUMP_TO_TAB_7: {
 		key: {
-			mac: L("meta+alt+7"),
+			mac: L("alt+7"),
 			windows: L("ctrl+shift+alt+7"),
 			linux: L("ctrl+shift+alt+7"),
 		},
@@ -628,7 +628,7 @@ export const HOTKEYS_REGISTRY = {
 	},
 	JUMP_TO_TAB_8: {
 		key: {
-			mac: L("meta+alt+8"),
+			mac: L("alt+8"),
 			windows: L("ctrl+shift+alt+8"),
 			linux: L("ctrl+shift+alt+8"),
 		},
@@ -637,7 +637,7 @@ export const HOTKEYS_REGISTRY = {
 	},
 	JUMP_TO_TAB_9: {
 		key: {
-			mac: L("meta+alt+9"),
+			mac: L("alt+9"),
 			windows: L("ctrl+shift+alt+9"),
 			linux: L("ctrl+shift+alt+9"),
 		},

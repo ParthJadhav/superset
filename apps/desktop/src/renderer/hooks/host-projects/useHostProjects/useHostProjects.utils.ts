@@ -11,6 +11,7 @@ export interface HostProjectRow {
 	repoName: string | null;
 	repoUrl: string | null;
 	worktreeBaseDir: string | null;
+	iconDataUrl: string | null;
 	createdAt: number;
 	updatedAt: number;
 }
@@ -30,6 +31,7 @@ export interface HostProjectItem {
 	repoOwner: string | null;
 	repoName: string | null;
 	repoUrl: string | null;
+	iconDataUrl: string | null;
 	/** Hosts that serve this project. */
 	hostIds: string[];
 	/** False when no serving host answered live (snapshot data only). */
@@ -50,6 +52,15 @@ export interface HostRowForTargets {
 	organizationId: string;
 	machineId: string;
 	isOnline: boolean;
+}
+
+export function getHostProjectIconUrl(
+	project: Pick<HostProjectItem, "iconDataUrl" | "repoOwner">,
+): string | null {
+	if (project.iconDataUrl) return project.iconDataUrl;
+	return project.repoOwner
+		? `https://github.com/${project.repoOwner}.png?size=64`
+		: null;
 }
 
 export function getHostProjectsQueryKey(
@@ -131,6 +142,7 @@ export function normalizeHostProjectRow(
 		repoName: row.repoName ?? null,
 		repoUrl: row.repoUrl ?? null,
 		worktreeBaseDir: row.worktreeBaseDir ?? null,
+		iconDataUrl: row.iconDataUrl ?? null,
 		createdAt: row.createdAt ?? 0,
 		updatedAt: row.updatedAt ?? row.createdAt ?? 0,
 	};
@@ -234,6 +246,7 @@ export function applyProjectChangedEvent(
 		repoName: snapshot.repoName,
 		repoUrl: snapshot.repoUrl,
 		worktreeBaseDir: snapshot.worktreeBaseDir,
+		iconDataUrl: snapshot.iconDataUrl ?? null,
 		createdAt: snapshot.createdAt,
 		updatedAt: snapshot.updatedAt,
 	};
@@ -274,6 +287,7 @@ export function mergeHostProjects({
 					repoOwner: row.repoOwner,
 					repoName: row.repoName,
 					repoUrl: row.repoUrl,
+					iconDataUrl: row.iconDataUrl,
 					hostIds: [result.target.machineId],
 					hostReachable: result.reachable,
 					createdAt: row.createdAt,
@@ -287,6 +301,7 @@ export function mergeHostProjects({
 			if (row.updatedAt > existing.updatedAt) {
 				existing.name = row.name;
 				existing.repoUrl = row.repoUrl;
+				existing.iconDataUrl = row.iconDataUrl;
 				existing.updatedAt = row.updatedAt;
 			}
 			if (row.createdAt < existing.createdAt) {
@@ -297,6 +312,7 @@ export function mergeHostProjects({
 				existing.repoPath = row.repoPath;
 				existing.repoOwner = row.repoOwner;
 				existing.repoName = row.repoName;
+				existing.iconDataUrl = row.iconDataUrl;
 			}
 		}
 	}

@@ -465,6 +465,16 @@ describe("terminal-ws-transport", () => {
 		expect(socket.reconnectCount).toBe(before + 1);
 	});
 
+	test("notifies exit listeners with the server exit details", () => {
+		const { transport, socket } = connectAttached();
+		const exits: Array<{ exitCode: number; signal: number }> = [];
+		transport.exitListeners.add((exit) => exits.push(exit));
+
+		socket.message(JSON.stringify({ type: "exit", exitCode: 7, signal: 15 }));
+
+		expect(exits).toEqual([{ exitCode: 7, signal: 15 }]);
+	});
+
 	test("forces a reconnect on the wall-clock gap after sleep/wake", () => {
 		jest.useFakeTimers();
 		setSystemTime(new Date("2026-01-01T00:00:00Z"));
