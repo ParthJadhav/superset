@@ -33,6 +33,56 @@ self-referential and would change that hash.
 
 ---
 
+## 2026-07-23 — Sharp-compatible desktop runtime dependency layout
+
+- **Status:** Active fork decision
+- **Implementation commit:**
+  `c14298b0f7bc34a50dc886fdf4d54d1074681744`
+- **Parent commit:** `82d67f609585a58f8a1f1b4c04876b4c02b5c72c`
+- **Commit subject:** `fix(desktop): align Sharp runtime dependency`
+- **Scope:** Desktop production dependency layout and lockfile
+
+### Why this fork differs
+
+Agent-assisted project logo discovery adds Sharp to the packaged desktop
+runtime. Electron Builder traverses the Bun dependency tree directly and needs
+Sharp's required `detect-libc` version to be resolvable from the desktop
+package's production dependency layout on every build platform.
+
+### Active fork decisions
+
+- Keep the desktop's direct `detect-libc` dependency aligned with Sharp's
+  supported 2.1.x runtime.
+- Allow packages that require an older exact version, such as libsql, to retain
+  their isolated nested copy.
+- Verify this layout through the Linux Electron packaging path, not only macOS
+  application builds.
+
+### Preservation checklist for upstream conflicts
+
+- [ ] Electron Builder can traverse Sharp's production dependencies on Linux
+      without a missing `detect-libc` error.
+- [ ] Sharp and libsql each resolve a compatible `detect-libc` version in the
+      packaged application.
+- [ ] The native-runtime validator still finds the target Sharp binding and
+      libvips packages.
+
+### Primary implementation areas
+
+- `apps/desktop/package.json`
+- `bun.lock`
+
+### Verification recorded for the implementation commit
+
+- A clean frozen install resolved the desktop's direct `detect-libc` dependency
+  to 2.1.2 while retaining libsql's nested 2.0.2 copy.
+- The desktop typecheck and root lint passed with zero warnings.
+- A cross-platform production build on macOS targeted Linux, passed native
+  runtime validation, traversed the complete dependency graph, and produced
+  the Linux AppImage without the CI failure.
+
+---
+
 ## 2026-07-23 — Cross-platform Sharp packaging for the standalone CLI
 
 - **Status:** Active fork decision
