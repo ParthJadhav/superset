@@ -26,6 +26,7 @@ import { createRingtoneRouter } from "./ringtone";
 import { createSettingsRouter } from "./settings";
 import { createSystemRouter } from "./system";
 import { createTerminalRouter } from "./terminal";
+import { createThemeMarketplaceRouter } from "./theme-marketplace/theme-marketplace";
 import { createUiStateRouter } from "./ui-state";
 import { createWindowRouter } from "./window";
 import { createWorkspacesRouter } from "./workspaces";
@@ -44,6 +45,7 @@ export const createAppRouter = (getWindow: () => BrowserWindow | null) => {
 		projects: createProjectsRouter(getWindow),
 		workspaces: createWorkspacesRouter(),
 		terminal: createTerminalRouter(),
+		themeMarketplace: createThemeMarketplaceRouter(),
 		changes: createChangesRouter(),
 		filesystem: createFilesystemRouter(),
 		notifications: createNotificationsRouter(getWindow),

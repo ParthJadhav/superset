@@ -26,6 +26,37 @@ describe("parseThemeConfigFile", () => {
 		expect(result.themes[0]?.terminal?.red).toBeDefined();
 	});
 
+	it("imports a VS Code color theme without a Superset-specific wrapper", () => {
+		const result = parseThemeConfigFile(
+			`{
+				// JSONC is valid for VS Code themes.
+				"type": "dark",
+				"colors": {
+					"editor.background": "#1b1d23",
+					"editor.foreground": "#e8eaf0",
+					"terminal.ansiRed": "#f26d78",
+				},
+				"tokenColors": [
+					{
+						"scope": "comment",
+						"settings": { "foreground": "#6f7787" },
+					},
+				],
+			}`,
+			{ fallbackName: "My VS Code Theme" },
+		);
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+
+		expect(result.themes[0]?.id).toBe("vscode-my-vs-code-theme");
+		expect(result.themes[0]?.name).toBe("My VS Code Theme");
+		expect(result.themes[0]?.ui.background).toBe("#1b1d23");
+		expect(result.themes[0]?.terminal?.red).toBe("#f26d78");
+		expect(result.themes[0]?.editor?.syntax?.comment).toBe("#6f7787");
+		expect(result.themes[0]?.source?.kind).toBe("vscode");
+	});
+
 	it("parses a theme pack from { themes: [] }", () => {
 		const result = parseThemeConfigFile(
 			JSON.stringify({

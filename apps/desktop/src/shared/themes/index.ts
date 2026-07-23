@@ -10,7 +10,11 @@ export {
 	monokaiTheme,
 } from "./built-in";
 export { getEditorTheme } from "./editor-theme";
-export { parseThemeConfigFile, type ThemeConfigParseResult } from "./import";
+export {
+	parseThemeConfigFile,
+	type ThemeConfigParseOptions,
+	type ThemeConfigParseResult,
+} from "./import";
 export type {
 	EditorColors,
 	EditorSyntaxColors,
@@ -18,6 +22,7 @@ export type {
 	TerminalColors,
 	Theme,
 	ThemeMetadata,
+	ThemeSource,
 	UIColors,
 } from "./types";
 export {
@@ -27,3 +32,12 @@ export {
 	getTerminalColors,
 } from "./types";
 export { withAlpha } from "./utils";
+export {
+	convertVSCodeTheme,
+	isVSCodeColorTheme,
+	normalizeThemeId,
+	parseVSCodeThemeJson,
+	type VSCodeColorTheme,
+	type VSCodeThemeConversionOptions,
+	type VSCodeTokenColorRule,
+} from "./vscode";

@@ -1,7 +1,13 @@
+import { type ParseError, parse as parseJsonc } from "jsonc-parser";
 import { z } from "zod";
 import { builtInThemes, darkTheme, lightTheme } from "./built-in";
 import { getEditorTheme } from "./editor-theme";
 import { getDefaultTerminalColors, type Theme } from "./types";
+import {
+	convertVSCodeTheme,
+	isVSCodeColorTheme,
+	normalizeThemeId,
+} from "./vscode";
 
 const uiColorsSchema = z
 	.object({
@@ -148,14 +154,6 @@ const RESERVED_THEME_IDS = new Set([
 	...builtInThemes.map((theme) => theme.id),
 ]);
 
-function normalizeThemeId(value: string): string {
-	return value
-		.trim()
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, "-")
-		.replace(/^-+|-+$/g, "");
-}
-
 function isThemePack(value: unknown): value is {
 	themes: unknown[];
 } {
@@ -256,19 +254,38 @@ export type ThemeConfigParseResult =
 	| { ok: false; error: string }
 	| { ok: true; themes: Theme[]; issues: string[] };
 
+export interface ThemeConfigParseOptions {
+	fallbackName?: string;
+}
+
 /**
  * Parse user-supplied theme config JSON.
  * Supports:
+ * - a VS Code color theme JSON/JSONC file
  * - a single theme object
  * - an array of theme objects
  * - an object with `{ themes: [...] }`
  */
-export function parseThemeConfigFile(content: string): ThemeConfigParseResult {
-	let parsedJson: unknown;
-	try {
-		parsedJson = JSON.parse(content);
-	} catch {
+export function parseThemeConfigFile(
+	content: string,
+	options: ThemeConfigParseOptions = {},
+): ThemeConfigParseResult {
+	const errors: ParseError[] = [];
+	const parsedJson: unknown = parseJsonc(content, errors, {
+		allowTrailingComma: true,
+		disallowComments: false,
+	});
+	if (errors.length > 0 || parsedJson === undefined) {
 		return { ok: false, error: "Invalid JSON file" };
+	}
+
+	if (isVSCodeColorTheme(parsedJson)) {
+		const theme = convertVSCodeTheme(parsedJson, {
+			fallbackName: options.fallbackName,
+			idPrefix: "vscode",
+			source: { kind: "vscode" },
+		});
+		return { ok: true, themes: [theme], issues: [] };
 	}
 
 	const entries = Array.isArray(parsedJson)
