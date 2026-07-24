@@ -96,6 +96,10 @@ export default defineConfig({
 			"process.env.SUPERSET_WORKSPACE_NAME": defineEnv(
 				process.env.SUPERSET_WORKSPACE_NAME,
 			),
+			"process.env.GITHUB_REPOSITORY": defineEnv(
+				process.env.GITHUB_REPOSITORY,
+				"superset-sh/superset",
+			),
 		},
 
 		build: {
