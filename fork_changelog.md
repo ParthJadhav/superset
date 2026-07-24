@@ -42,6 +42,8 @@ self-referential and would change that hash.
   `b2964c5f40576492c66da1e50e691cf5d04bff1c`
 - **Review follow-up commit:**
   `16176f6f8c2106d39f6c442a4b99343a78c83c6e`
+- **Test stabilization commit:**
+  `00fa34baad0142abb5f43a6799621b8fa17ea60a`
 - **Fork parent:** `a2289b5de08e5df1256037d3a9557992ce5c92e8`
 - **Upstream parent:** `f1bce64af7d2e345f0663c23b61c7f253bebd8a8`
 - **Commit subject:** `chore: sync upstream main through f1bce64af`
@@ -89,11 +91,15 @@ self-referential and would change that hash.
 ### Verification recorded for the integration commit
 
 - All 35 monorepo typecheck tasks passed.
-- Root Biome lint checked 5,379 files with zero warnings.
+- Root Biome lint checked 5,377 files with zero warnings.
 - All 95 focused release, upstream regression, agent-wrapper, agent-title,
   chat-navigation, CLI workspace, and changes-pane tests passed. The
   changes-pane hook suite used the desktop package preload required by its
   Electron tRPC test environment.
+- The complete monorepo test command passed all 14 package tasks, including
+  2,294 desktop tests and 918 host-service tests. Pull-request review also
+  corrected an environment-sensitive macOS PATH test that had not accounted
+  for the runtime's intentional Homebrew path augmentation.
 - Pull-request review added explicit external-agent title coverage and removed
   the unreachable collapsed-workspace sortable component.
 - `git diff --check` passed and upstream `f1bce64af` is an ancestor of the
