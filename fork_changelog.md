@@ -33,6 +33,67 @@ self-referential and would change that hash.
 
 ---
 
+## 2026-07-24 — Upstream sync through Superset f1bce64af
+
+- **Status:** Active integration record
+- **Integration commit:**
+  `5f45398bd582cc9915c94ad3d7c0a497677ac96e`
+- **Changelog safeguard commit:**
+  `b2964c5f40576492c66da1e50e691cf5d04bff1c`
+- **Fork parent:** `a2289b5de08e5df1256037d3a9557992ce5c92e8`
+- **Upstream parent:** `f1bce64af7d2e345f0663c23b61c7f253bebd8a8`
+- **Commit subject:** `chore: sync upstream main through f1bce64af`
+- **Scope:** Desktop, host service, CLI, SDK, tRPC, database schema and
+  migration, marketing analytics, documentation, and fork compatibility
+
+### Integrated upstream work
+
+- Integrated all 12 upstream commits after the common base
+  `1c44157fcdc3e706b1c80309daf6b3d1c3d27104`, including fixes for Cursor
+  Composer identity, V2 workspace IDE opening and collapsed-sidebar ordering,
+  capped commit totals, organization-scoped JWT calls, automation creation,
+  workspace lifecycle telemetry, and host-targeted CLI/SDK reads.
+- Preserved the upstream-generated
+  `0062_drop_automations_v2_project_fk` database migration without editing or
+  running it.
+- Kept the upstream workspace activity chips, file-search updates, docs, and
+  marketing experiment bootstrap where they do not compete with an active fork
+  decision.
+
+### Fork decisions preserved during conflicts
+
+- Kept repository → conversation navigation and compact agent-less workspace
+  fallbacks instead of restoring workspace-first navigation in the collapsed
+  rail.
+- Kept New Chat, Search, and Tasks & PRs out of the V2 sidebar header.
+- Kept Automations immediately to the right of Resources in expanded and
+  collapsed sidebar chrome.
+- Kept modifier-visible workspace shortcut badges while adopting upstream's
+  keyboard-focus visibility for the row action controls.
+- Extended the fork's agent-chat identity and persisted-title paths to accept
+  upstream's external `cursor-composer` identity without treating it as a
+  launchable built-in.
+
+### Changelog durability
+
+- `fork_changelog.md` is assigned Git's built-in `union` merge driver so
+  simultaneous append-only fork and upstream edits retain both sides.
+- CI now fails if the changelog, its conflict policy, or the merge safeguard is
+  removed.
+
+### Verification recorded for the integration commit
+
+- All 35 monorepo typecheck tasks passed.
+- Root Biome lint checked 5,379 files with zero warnings.
+- All 93 focused release, upstream regression, agent-wrapper, agent-title,
+  chat-navigation, CLI workspace, and changes-pane tests passed. The
+  changes-pane hook suite used the desktop package preload required by its
+  Electron tRPC test environment.
+- `git diff --check` passed and upstream `f1bce64af` is an ancestor of the
+  integration branch.
+
+---
+
 ## 2026-07-23 — Accessible semantic colors for imported VS Code themes
 
 - **Status:** Active fork decision
