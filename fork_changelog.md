@@ -40,6 +40,8 @@ self-referential and would change that hash.
   `5f45398bd582cc9915c94ad3d7c0a497677ac96e`
 - **Changelog safeguard commit:**
   `b2964c5f40576492c66da1e50e691cf5d04bff1c`
+- **Review follow-up commit:**
+  `16176f6f8c2106d39f6c442a4b99343a78c83c6e`
 - **Fork parent:** `a2289b5de08e5df1256037d3a9557992ce5c92e8`
 - **Upstream parent:** `f1bce64af7d2e345f0663c23b61c7f253bebd8a8`
 - **Commit subject:** `chore: sync upstream main through f1bce64af`
@@ -50,9 +52,9 @@ self-referential and would change that hash.
 
 - Integrated all 12 upstream commits after the common base
   `1c44157fcdc3e706b1c80309daf6b3d1c3d27104`, including fixes for Cursor
-  Composer identity, V2 workspace IDE opening and collapsed-sidebar ordering,
-  capped commit totals, organization-scoped JWT calls, automation creation,
-  workspace lifecycle telemetry, and host-targeted CLI/SDK reads.
+  Composer identity, V2 workspace IDE opening, capped commit totals,
+  organization-scoped JWT calls, automation creation, workspace lifecycle
+  telemetry, and host-targeted CLI/SDK reads.
 - Preserved the upstream-generated
   `0062_drop_automations_v2_project_fk` database migration without editing or
   running it.
@@ -65,6 +67,9 @@ self-referential and would change that hash.
 - Kept repository → conversation navigation and compact agent-less workspace
   fallbacks instead of restoring workspace-first navigation in the collapsed
   rail.
+- Did not expose upstream's collapsed-workspace drag ordering in the chat-first
+  rail; the upstream-only sortable workspace component was unreachable after
+  the fork resolution and was removed during pull-request review.
 - Kept New Chat, Search, and Tasks & PRs out of the V2 sidebar header.
 - Kept Automations immediately to the right of Resources in expanded and
   collapsed sidebar chrome.
@@ -85,10 +90,12 @@ self-referential and would change that hash.
 
 - All 35 monorepo typecheck tasks passed.
 - Root Biome lint checked 5,379 files with zero warnings.
-- All 93 focused release, upstream regression, agent-wrapper, agent-title,
+- All 95 focused release, upstream regression, agent-wrapper, agent-title,
   chat-navigation, CLI workspace, and changes-pane tests passed. The
   changes-pane hook suite used the desktop package preload required by its
   Electron tRPC test environment.
+- Pull-request review added explicit external-agent title coverage and removed
+  the unreachable collapsed-workspace sortable component.
 - `git diff --check` passed and upstream `f1bce64af` is an ancestor of the
   integration branch.
 
