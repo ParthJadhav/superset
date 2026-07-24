@@ -18,6 +18,7 @@ import type {
 } from "../../../../types";
 import { DashboardSidebarWorkspaceDiffStats } from "../DashboardSidebarWorkspaceDiffStats";
 import { DashboardSidebarWorkspaceIcon } from "../DashboardSidebarWorkspaceIcon";
+import { DashboardSidebarWorkspaceChips } from "./components/DashboardSidebarWorkspaceChips";
 
 const PR_STATE_LABEL: Record<
 	DashboardSidebarWorkspacePullRequest["state"],
@@ -71,7 +72,6 @@ export const DashboardSidebarExpandedWorkspaceRow = forwardRef<
 			onSubmitRename,
 			onCancelRename,
 			className,
-			children,
 			...props
 		},
 		ref,
@@ -275,7 +275,7 @@ export const DashboardSidebarExpandedWorkspaceRow = forwardRef<
 								)
 							)}
 							{!isPending && !shortcutLabel && (
-								<div className="hidden items-center justify-end gap-1.5 group-hover:flex">
+								<div className="invisible flex items-center justify-end gap-1.5 group-hover:visible group-focus-within:visible">
 									{isMainWorkspace ? (
 										<Tooltip delayDuration={300}>
 											<TooltipTrigger asChild>
@@ -341,7 +341,13 @@ export const DashboardSidebarExpandedWorkspaceRow = forwardRef<
 						</div>
 					</div>
 				</div>
-				{children}
+				{!isPending && (
+					<DashboardSidebarWorkspaceChips
+						workspaceId={workspace.id}
+						isInSection={isInSection}
+						onClick={onClick}
+					/>
+				)}
 			</div>
 		);
 	},

@@ -1,4 +1,4 @@
-import type { BuiltinAgentId } from "@superset/shared/agent-catalog";
+import type { AgentIdentityId } from "@superset/shared/agent-catalog";
 import type { WorkspaceTransactionSnapshot } from "renderer/stores/workspace-creates";
 import type { PaneStatus } from "shared/tabs-types";
 
@@ -54,7 +54,7 @@ export interface DashboardSidebarAgentChat {
 	workspaceName: string;
 	projectId: string;
 	projectName: string;
-	agentId: BuiltinAgentId;
+	agentId: AgentIdentityId;
 	status: PaneStatus;
 	title: string;
 	startedAt: number;

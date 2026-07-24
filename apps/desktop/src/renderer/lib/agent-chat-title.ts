@@ -1,7 +1,7 @@
 import type { WorkspaceState } from "@superset/panes";
 import {
-	BUILTIN_AGENT_LABELS,
-	type BuiltinAgentId,
+	AGENT_IDENTITY_LABELS,
+	type AgentIdentityId,
 } from "@superset/shared/agent-catalog";
 
 const GENERIC_TERMINAL_TITLES = new Set([
@@ -22,13 +22,13 @@ function normalizeTitle(title: string): string {
 
 function isGenericAgentTitle(
 	title: string,
-	agentId: BuiltinAgentId | undefined,
+	agentId: AgentIdentityId | undefined,
 ): boolean {
 	const normalized = normalizeTitle(title).toLocaleLowerCase();
 	if (GENERIC_TERMINAL_TITLES.has(normalized)) return true;
 	if (!agentId) return false;
 
-	const label = BUILTIN_AGENT_LABELS[agentId];
+	const label = AGENT_IDENTITY_LABELS[agentId];
 	return (
 		normalized === agentId.toLocaleLowerCase() ||
 		normalized === label?.toLocaleLowerCase() ||
@@ -51,7 +51,7 @@ export function resolveAgentChatTitle({
 	explicitTitle: string | null | undefined;
 	sessionTitle?: string | null;
 	workspaceName: string;
-	agentId?: BuiltinAgentId;
+	agentId?: AgentIdentityId;
 }): string {
 	const normalizedExplicitTitle = explicitTitle
 		? normalizeTitle(explicitTitle)
@@ -77,7 +77,7 @@ export function resolveAgentChatTitle({
 		return normalizedWorkspaceName;
 	}
 
-	return agentId ? `${BUILTIN_AGENT_LABELS[agentId]} session` : "Agent chat";
+	return agentId ? `${AGENT_IDENTITY_LABELS[agentId]} session` : "Agent chat";
 }
 
 /** Find a persisted tab/pane title for one terminal before resolving it. */
