@@ -1,0 +1,2 @@
+# Keep the append-only fork policy record from losing either side during syncs.
+fork_changelog.md merge=union

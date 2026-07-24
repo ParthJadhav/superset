@@ -1,4 +1,4 @@
-import { BUILTIN_AGENT_LABELS } from "@superset/shared/agent-catalog";
+import { AGENT_IDENTITY_LABELS } from "@superset/shared/agent-catalog";
 import {
 	ContextMenu,
 	ContextMenuContent,
@@ -20,6 +20,7 @@ import { usePresetIcon } from "renderer/assets/app-icons/preset-icons";
 import { useWorkspaceHostUrl } from "renderer/hooks/host-service/useWorkspaceHostUrl";
 import { useHotkeyDisplay } from "renderer/hotkeys";
 import { getHostServiceClientByUrl } from "renderer/lib/host-service-client";
+import { useDashboardSidebarAgentKill } from "renderer/routes/_authenticated/_dashboard/components/DashboardSidebar/components/DashboardSidebarWorkspaceItem/components/DashboardSidebarExpandedWorkspaceRow/components/DashboardSidebarWorkspaceChips/hooks/useDashboardSidebarAgentKill";
 import { navigateToV2Workspace } from "renderer/routes/_authenticated/_dashboard/utils/workspace-navigation";
 import {
 	getStatusTooltip,
@@ -27,7 +28,6 @@ import {
 } from "renderer/screens/main/components/StatusIndicator";
 import { useAgentChatPinsStore } from "renderer/stores/agent-chat-pins";
 import type { DashboardSidebarAgentChat } from "../../types";
-import { useDashboardSidebarAgentKill } from "../DashboardSidebarWorkspaceItem/components/DashboardSidebarWorkspaceDetails/hooks/useDashboardSidebarAgentKill";
 
 interface DashboardSidebarAgentChatItemProps {
 	chat: DashboardSidebarAgentChat;
@@ -64,7 +64,7 @@ export function DashboardSidebarAgentChatItem({
 		}),
 	);
 	const isActive = isWorkspaceActive && activeTerminalId === chat.terminalId;
-	const agentLabel = BUILTIN_AGENT_LABELS[chat.agentId] ?? chat.agentId;
+	const agentLabel = AGENT_IDENTITY_LABELS[chat.agentId] ?? chat.agentId;
 	const statusLabel =
 		chat.status === "idle" ? "Idle" : getStatusTooltip(chat.status);
 	const pinShortcut = useHotkeyDisplay("TOGGLE_PIN_CHAT").text;

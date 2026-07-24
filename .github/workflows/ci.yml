@@ -8,6 +8,19 @@ on:
     types: [opened, synchronize]
 
 jobs:
+  fork-changelog:
+    name: Fork Changelog
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Verify fork changelog safeguards
+        run: |
+          test -s fork_changelog.md
+          grep -q '^## Conflict-resolution policy' fork_changelog.md
+          grep -q '^fork_changelog\.md merge=union$' .gitattributes
+
   sherif:
     name: Sherif
     runs-on: ubuntu-latest

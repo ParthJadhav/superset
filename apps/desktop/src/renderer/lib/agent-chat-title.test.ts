@@ -49,6 +49,16 @@ describe("resolveAgentChatTitle", () => {
 		).toBe("Codex session");
 	});
 
+	it("supports externally detected agent identities", () => {
+		expect(
+			resolveAgentChatTitle({
+				explicitTitle: "Cursor Composer",
+				workspaceName: "local",
+				agentId: "cursor-composer",
+			}),
+		).toBe("Cursor Composer session");
+	});
+
 	it("preserves an explicit custom title over the agent session title", () => {
 		expect(
 			resolveAgentChatTitle({

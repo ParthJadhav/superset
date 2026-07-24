@@ -8,7 +8,7 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
-import type { BuiltinAgentId } from "@superset/shared/agent-catalog";
+import type { AgentIdentityId } from "@superset/shared/agent-catalog";
 
 const CLAUDE_READ_CHUNK_BYTES = 256 * 1024;
 const TITLE_CACHE_TTL_MS = 10_000;
@@ -166,7 +166,7 @@ function findClaudeSessionFile(
 }
 
 export interface ResolveAgentSessionTitleInput {
-	agentId: BuiltinAgentId;
+	agentId: AgentIdentityId;
 	agentSessionId: string | undefined;
 	/** Overrides are primarily for isolated tests. */
 	homeDirectory?: string;
