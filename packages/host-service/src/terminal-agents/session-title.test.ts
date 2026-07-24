@@ -7,6 +7,7 @@ import {
 	parseLatestClaudeSessionTitle,
 	readClaudeSessionTitle,
 	readCodexSessionTitle,
+	resolveAgentSessionTitle,
 } from "./session-title";
 
 const temporaryDirectories: string[] = [];
@@ -65,5 +66,17 @@ describe("Claude session titles", () => {
 		);
 
 		expect(readClaudeSessionTitle(filePath)).toBe("Build the agent picker");
+	});
+});
+
+describe("External agent session titles", () => {
+	it("returns no title for identities without a persisted-title reader", async () => {
+		expect(
+			await resolveAgentSessionTitle({
+				agentId: "cursor-composer",
+				agentSessionId: "composer-session",
+				homeDirectory: makeTemporaryDirectory(),
+			}),
+		).toBeUndefined();
 	});
 });
