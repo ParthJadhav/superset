@@ -33,6 +33,61 @@ self-referential and would change that hash.
 
 ---
 
+## 2026-07-24 — Fork-owned desktop update feeds
+
+- **Status:** Active fork decision
+- **Implementation commit:**
+  `2bf4a54e384e66d5c0a672be1b0b6db4d1cd3f01`
+- **Parent commit:** `fbfa6b85426fd0bba245b3fda283af3d716c20a4`
+- **Commit subject:** `fix(desktop): target fork release updates`
+- **Scope:** Desktop stable and canary auto-update feeds and release packaging
+
+### Why this fork differs
+
+The packaged updater metadata already targeted the repository that built a
+release, but the desktop main process replaced that metadata with hard-coded
+upstream feed URLs. Launch verification of fork release 1.16.6 exposed that it
+queried `superset-sh/superset` instead of this fork, preventing fork users from
+receiving fork releases.
+
+### Active fork decisions
+
+- Inject the GitHub repository that built the desktop into the main-process
+  bundle and derive both stable and canary update feeds from it.
+- Retain `superset-sh/superset` as the fallback for local or non-GitHub builds
+  that do not provide a valid `owner/repository` value.
+- Verify the injected repository literal in both macOS and Linux compiled
+  bundles before packaging release artifacts.
+
+### Preservation checklist for upstream conflicts
+
+- [ ] Fork desktop builds query their own stable release feed.
+- [ ] Fork canary builds query their own `desktop-canary` release.
+- [ ] Local builds without repository metadata retain the upstream fallback.
+- [ ] macOS and Linux packaging fail if the build repository is absent from the
+      compiled main-process bundle.
+
+### Primary implementation areas
+
+- `apps/desktop/src/main/lib/auto-updater.ts`
+- `apps/desktop/src/main/lib/auto-updater-feed.ts`
+- `apps/desktop/electron.vite.config.ts`
+- `.github/workflows/build-desktop.yml`
+
+### Verification recorded for the implementation commit
+
+- All seven focused stable, canary, and invalid-repository feed tests passed.
+- Desktop TypeScript passed, including generated icons and routes.
+- Root Biome lint checked 5,379 files with zero warnings.
+- A production-style compile with
+  `GITHUB_REPOSITORY=ParthJadhav/superset` completed successfully, including the
+  bundled CLI and PTY-daemon checks, and the compiled main process contained the
+  exact fork repository literal.
+- The macOS/Linux packaging assertion passed locally against that compiled
+  bundle, and `git diff --check` reported no whitespace errors.
+
+---
+
 ## 2026-07-24 — Upstream sync through Superset f1bce64af
 
 - **Status:** Active integration record

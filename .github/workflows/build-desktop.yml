@@ -111,6 +111,14 @@ jobs:
           TARGET_ARCH: ${{ matrix.arch }}
         run: bun run compile:app
 
+      - name: Verify updater targets build repository
+        working-directory: apps/desktop
+        run: |
+          grep -F "\"${GITHUB_REPOSITORY}\"" dist/main/index.js || {
+            echo "::error::Compiled updater does not target ${GITHUB_REPOSITORY}"
+            exit 1
+          }
+
       - name: Build Electron app (signed)
         if: env.HAS_MAC_CERTIFICATE == 'true'
         working-directory: apps/desktop
@@ -265,6 +273,14 @@ jobs:
           SUPERSET_WORKSPACE_NAME: superset
           TARGET_ARCH: x64
         run: bun run compile:app
+
+      - name: Verify updater targets build repository
+        working-directory: apps/desktop
+        run: |
+          grep -F "\"${GITHUB_REPOSITORY}\"" dist/main/index.js || {
+            echo "::error::Compiled updater does not target ${GITHUB_REPOSITORY}"
+            exit 1
+          }
 
       - name: Build Electron app
         working-directory: apps/desktop
